@@ -1,0 +1,57 @@
+name: Scan job listings
+
+on:
+  schedule:
+    # Twice a day, weekdays only — 7am and 5pm Central.
+    # GitHub cron is UTC, so 13:00 and 23:00 UTC during CST (Nov-Mar);
+    # these drift an hour to 8am/6pm Central under CDT, which is harmless.
+    #
+    # The 7am run means fresh listings are waiting when he sits down.
+    # The 5pm run catches anything posted during the business day.
+    #
+    # Each run costs ~$0.13 in web searches, so this is ~$6/mo.
+    # See the cost table in README.md before making this more frequent.
+    - cron: '0 13,23 * * 1-5'
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+  push:
+    paths:
+      - 'scripts/scan.mjs'  # re-run after editing the scan logic
+
+concurrency:
+  group: scan
+  cancel-in-progress: false
+
+permissions:
+  contents: write           # needed to commit the refreshed page
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Research and rewrite index.html
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODEL: ${{ vars.MODEL || 'claude-haiku-5-5' }}
+          MAX_SEARCHES: ${{ vars.MAX_SEARCHES || '12' }}
+        run: node scripts/scan.mjs
+
+      - name: Commit if listings changed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No change in listings — nothing to publish."
+            exit 0
+          fi
+          git config user.name  "job-scan bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Scan $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
+          echo "Published. Vercel will redeploy in about 20 seconds."

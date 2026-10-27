@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insurance Broker Openings — Birmingham & Southeast</title>
+<meta name="description" content="Entry-level insurance brokerage openings, Birmingham AL first, then by distance.">
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171c22; --panel2:#1d242c; --line:#2a333d;
+    --ink:#e9eef4; --muted:#95a3b3; --dim:#6d7d8e;
+    --accent:#4da3ff; --accent2:#1b6fc4;
+    --gold:#f0b429; --green:#3fb950; --red:#f0603e;
+    --radius:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f6f8fa; --panel:#ffffff; --panel2:#f0f3f7; --line:#dde3ea;
+      --ink:#16202b; --muted:#5a6B7c; --dim:#7b8a99;
+      --accent:#1b6fc4; --accent2:#0d4e92;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 18px 80px}
+
+  header.top{margin-bottom:22px}
+  h1{font-size:26px;line-height:1.25;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  .stamp{color:var(--dim);font-size:12.5px;margin-top:10px}
+  .stamp b{color:var(--muted);font-weight:600}
+
+  .bar{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+    margin:20px 0 16px;padding:12px;background:var(--panel);
+    border:1px solid var(--line);border-radius:var(--radius);
+  }
+  input[type=search]{
+    flex:1 1 200px;min-width:160px;padding:9px 12px;border-radius:8px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:14px;
+  }
+  input[type=search]::placeholder{color:var(--dim)}
+  input[type=search]:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .chip{
+    padding:7px 13px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--muted);font-size:13px;font-weight:600;
+    cursor:pointer;white-space:nowrap;
+  }
+  .chip:hover{border-color:var(--accent)}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .count{color:var(--dim);font-size:13px;margin:0 0 14px}
+
+  section.group{margin:0 0 26px}
+  .ghead{
+    display:flex;align-items:baseline;gap:10px;
+    padding:0 0 8px;margin:0 0 12px;border-bottom:1px solid var(--line);
+  }
+  .ghead h2{font-size:15px;margin:0;letter-spacing:.04em;text-transform:uppercase}
+  .ghead .gnote{font-size:13px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0}
+
+  ul.jobs{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  li.job{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px 16px;
+  }
+  li.job:hover{border-color:var(--accent2)}
+  .jtop{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between}
+  .jtitle{font-size:16px;font-weight:650;letter-spacing:-.01em;margin:0}
+  .jtitle a{color:var(--accent);text-decoration:none}
+  .jtitle a:hover{text-decoration:underline}
+  .jtitle a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  .jmeta{color:var(--muted);font-size:13.5px;margin:5px 0 0}
+  .jmeta .emp{color:var(--ink);font-weight:600}
+  .jnote{color:var(--muted);font-size:13.5px;margin:8px 0 0}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .tag{
+    font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    padding:3px 8px;border-radius:5px;background:var(--panel2);
+    color:var(--dim);border:1px solid var(--line);
+  }
+  .tag.pay{color:var(--green);border-color:color-mix(in srgb,var(--green) 35%,transparent)}
+  .tag.new{background:var(--gold);color:#241a00;border-color:var(--gold)}
+  .tag.warn{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)}
+  .tag.dist{color:var(--accent)}
+  .go{font-size:13px;font-weight:650;color:var(--accent);text-decoration:none;white-space:nowrap}
+  .go:hover{text-decoration:underline}
+
+  /* --- applied / hidden state --- */
+  li.job.applied{border-color:color-mix(in srgb,var(--green) 55%,var(--line))}
+  li.job.applied .jtitle a{color:var(--muted)}
+  li.job.applied::after{content:"";display:block}
+  li.job.hidden-row{opacity:.42}
+
+  .acts{display:flex;align-items:center;gap:14px;margin-top:11px;
+    padding-top:10px;border-top:1px dashed var(--line)}
+  .check{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+    font-size:13px;font-weight:650;color:var(--muted);user-select:none}
+  .check input{width:16px;height:16px;accent-color:var(--green);cursor:pointer;margin:0}
+  .check input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .check.on{color:var(--green)}
+  .linkbtn{background:none;border:none;padding:0;cursor:pointer;
+    font:inherit;font-size:13px;font-weight:650;color:var(--dim);text-decoration:underline}
+  .linkbtn:hover{color:var(--accent)}
+  .linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  .tag.done{background:var(--green);color:#04210b;border-color:var(--green)}
+
+  .empty{padding:36px 16px;text-align:center;color:var(--dim);
+    border:1px dashed var(--line);border-radius:var(--radius)}
+
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+    color:var(--dim);font-size:12.5px}
+  footer p{margin:0 0 7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Insurance Broker Openings</h1>
+    <p class="sub">Entry-level and early-career roles. Birmingham first, then ranked by driving distance.</p>
+    <p class="stamp">Last scan: <b id="stamp">—</b> · refreshes every 5 hours</p>
+  </header>
+
+  <div class="bar" role="group" aria-label="Filter listings">
+    <input type="search" id="q" placeholder="Search title, employer, city…" aria-label="Search listings">
+    <button class="chip" data-f="all" aria-pressed="true">All</button>
+    <button class="chip" data-f="bham" aria-pressed="false">Birmingham only</button>
+    <button class="chip" data-f="al" aria-pressed="false">Alabama</button>
+    <button class="chip" data-f="jan" aria-pressed="false">Jan-start friendly</button>
+    <button class="chip" id="tglApplied" aria-pressed="false">Hide applied</button>
+    <button class="chip" id="tglHidden" aria-pressed="false">Show hidden</button>
+    <button class="linkbtn" id="reset" style="margin-left:auto">Reset tracking</button>
+  </div>
+
+  <p class="count" id="count"></p>
+  <div id="out"></div>
+
+  <footer>
+    <p><b>How to use this.</b> Every title links straight to the posting. Aggregator links expire — if one 404s, search the title on the employer's own careers page.</p>
+    <p><b>On timing.</b> Brokers fill entry-level roles in 2–6 weeks, so applying late October through November is what produces a January start. Roles marked <span class="tag warn" style="display:inline-block">verify start</span> may begin mid-2027.</p>
+    <p><b>Biggest lever.</b> A direct note to the CAC supervisor beats any portal. Second biggest: an Alabama P&amp;C license before January.</p>
+    <p><b>Tracking.</b> Checkmarks and hidden rows save in whatever browser you're using and stay there between visits. They're private to that browser — they don't sync across devices and nobody else sees them. New scans keep your checkmarks; a listing stays checked even if its link changes.</p>
+  </footer>
+</div>
+
+<script type="application/json" id="data">
+{
+  "updated": "2026-10-27T12:00:00-05:00",
+  "cities": {
+    "Birmingham, AL": 0, "Tuscaloosa, AL": 60, "Montgomery, AL": 90,
+    "Huntsville, AL": 100, "Atlanta, GA": 150, "Alpharetta, GA": 175,
+    "Nashville, TN": 190, "Mobile, AL": 260, "Remote": 0
+  },
+  "jobs": [
+    {"title":"CAC Account Coordinator, Property & Casualty","employer":"The Baldwin Group / CAC","city":"Birmingham, AL","pay":"$18.75 – $24.25/hr","start":"Rolling","url":"https://www.insurancepond.com/job/960478/cac-account-coordinator-property-casualty/","tier":"alumni","isNew":false,"note":"Entry-level service role on an assigned book in the Education Practice. The standard post-internship landing spot — and he already knows the shop."},
+    {"title":"Account Coordinator, Senior Living — CAC","employer":"The Baldwin Group / CAC","city":"Birmingham, AL","pay":"Coordinator tier","start":"Rolling","url":"https://www.tealhq.com/job/account-coordinator-senior-living_7ea1aff75ace77007233e3464ecbf82a1edd0","tier":"alumni","isNew":false,"note":"Same entry tier, different practice group. Apply alongside the P&C coordinator req, not instead of it."},
+    {"title":"CAC Account Executive, Property & Casualty","employer":"The Baldwin Group / CAC","city":"Birmingham, AL","pay":"Not listed","start":"Rolling","url":"https://www.ziprecruiter.com/c/Baldwin/Job/CAC-Account-Executive,-Property-&-Casualty/-in-Birmingham,AL?jid=63286a306edc9856","tier":"alumni","isNew":false,"note":"A reach straight out of school, but an internal referral can make it live. Costs nothing to ask."},
+    {"title":"All Baldwin Group openings — Birmingham","employer":"The Baldwin Group / CAC","city":"Birmingham, AL","pay":"Varies","start":"Rolling","url":"https://www.indeed.com/cmp/The-Baldwin-Group/jobs/l-Birmingham,-AL","tier":"alumni","isNew":false,"note":"Employer listing page. New coordinator reqs here reportedly respond within about 3 days."},
+
+    {"title":"Insurance Client Service Specialist, Commercial Lines","employer":"Marsh McLennan Agency","city":"Birmingham, AL","pay":"est. $47K – $65K","start":"Rolling","url":"https://www.indeed.com/q-marsh-mclennan-l-birmingham,-al-jobs.html","tier":"major","isNew":false,"note":"Better pay than the coordinator tier and reachable with the CAC internship. Strong primary target."},
+    {"title":"Producer (hybrid)","employer":"Marsh McLennan Agency","city":"Birmingham, AL","pay":"Base + commission","start":"Rolling","url":"https://www.indeed.com/q-marsh-mclennan-l-birmingham,-al-jobs.html","tier":"major","isNew":false,"note":"Sales track with tuition reimbursement listed. The finance degree plays well in a producer conversation."},
+    {"title":"Insurance Client Service Associate (entry-level)","employer":"EPIC Insurance Brokers","city":"Birmingham, AL","pay":"Not listed","start":"Rolling","url":"https://www.glassdoor.com/Job/birmingham-al-insurance-broker-account-manager-jobs-SRCH_IL.0,13_IC1127429_KO14,46.htm","tier":"major","isNew":false,"note":"One of the few postings that says entry-level out loud."},
+    {"title":"Commercial Lines Account Manager","employer":"Higginbotham","city":"Birmingham, AL","pay":"Not listed","start":"Rolling","url":"https://www.ziprecruiter.com/co/Higginbotham-Insurance-Agency/Jobs/-in-Birmingham,AL","tier":"major","isNew":false,"note":"Usually asks 2+ years, but they run a paid internship pipeline, so they do hire young."},
+    {"title":"Commercial P&C and benefits roles — Birmingham office","employer":"McGriff (Marsh McLennan)","city":"Birmingham, AL","pay":"Varies","start":"Rolling","url":"https://www.indeed.com/q-marsh-&-mclennan-companies-l-birmingham,-al-jobs.html","tier":"major","isNew":false,"note":"Office at 2201 4th Ave N. Deep, long-standing Birmingham book."},
+    {"title":"Workers Compensation Claims Trainee","employer":"Gallagher Bassett","city":"Remote","pay":"~$60K","start":"Rolling","url":"https://www.ziprecruiter.com/co/Gallagher/Jobs/-in-Birmingham,AL","tier":"major","isNew":false,"note":"Claims rather than brokerage, Southeast region, remote-eligible. Best entry pay on the Birmingham list."},
+
+    {"title":"Employee Benefits Account Coordinator","employer":"Higginbotham","city":"Huntsville, AL","pay":"Not listed","start":"Rolling","url":"https://www.indeed.com/q-entry-level-account-manager-l-alabama-jobs.html","tier":"regional","isNew":false,"note":"Same coordinator tier as the CAC roles, about 100 miles north. A real fallback if Birmingham stays tight."},
+    {"title":"Claims Adjuster","employer":"Alfa Insurance","city":"Huntsville, AL","pay":"$24/hr","start":"Rolling","url":"https://www.ziprecruiter.com/Jobs/Insurance/-in-Huntsville,AL","tier":"regional","isNew":false,"note":"Alabama-based carrier. Carrier-side time is a respected route into brokerage later."},
+    {"title":"Entry-level insurance roles — Alabama statewide sweep","employer":"Multiple employers","city":"Montgomery, AL","pay":"$31K – $85K","start":"Rolling","url":"https://www.ziprecruiter.com/Jobs/Entry-Level-Insurance/--in-Alabama","tier":"regional","isNew":false,"note":"Catch-all for Montgomery, Tuscaloosa and Dothan postings the named-employer searches miss."},
+    {"title":"Insurance roles — Mobile market","employer":"Multiple employers","city":"Mobile, AL","pay":"$47K – $79K","start":"Rolling","url":"https://www.ziprecruiter.com/Jobs/Insurance/-in-Mobile,AL","tier":"regional","isNew":false,"note":"Furthest Alabama market at about 260 miles. Lower priority unless he'd move to the coast."},
+
+    {"title":"Marsh Risk Early Career Program — Full-Time 2027, Brokerage","employer":"Marsh","city":"Atlanta, GA","pay":"$70K – $73K","start":"verify start","url":"https://www.glassdoor.com/Job/atlanta-insurance-broker-jobs-SRCH_IL.0,7_IC1155583_KO8,24.htm","tier":"program","isNew":false,"note":"Highest pay found and a true brokerage rotational program. Confirm the start month — these often begin in summer."},
+    {"title":"Underwriting Development Program — Global Risk Solutions","employer":"Liberty Mutual","city":"Atlanta, GA","pay":"$48K – $137K","start":"verify start","url":"https://www.indeed.com/q-entry-level-insurance-l-atlanta,-ga-jobs.html","tier":"program","isNew":false,"note":"Structured program, but the listed June 2027 start does not fit a January need. Backup only."},
+    {"title":"Underwriting Graduate Program 'P28'","employer":"Beazley Group","city":"Atlanta, GA","pay":"Not listed","start":"verify start","url":"https://www.indeed.com/q-entry-underwriter-l-atlanta,-ga-jobs.html","tier":"program","isNew":false,"note":"Specialty insurance exposure across multiple products. Prestigious and competitive."},
+    {"title":"Underwriting Analyst — Early Talent 2027","employer":"Swiss Re","city":"Alpharetta, GA","pay":"~$70K","start":"verify start","url":"https://www.glassdoor.com/Job/atlanta-underwriter-entry-level-jobs-SRCH_IL.0,7_IC1155583_KO8,31.htm","tier":"program","isNew":false,"note":"Reinsurance analyst track. The finance degree is a direct fit for this one."},
+    {"title":"Underwriter Trainee","employer":"IFG Companies","city":"Atlanta, GA","pay":"Not listed","start":"Rolling","url":"https://www.indeed.com/q-underwriter-trainee-l-atlanta,-ga-jobs.html","tier":"program","isNew":false,"note":"Formal curriculum plus live commercial underwriting. The rolling start actually helps for January."}
+  ]
+}
+</script>
+
+<script>
+(function(){
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var JOBS = D.jobs, CITY = D.cities;
+  var filter = 'all', query = '', hideApplied = false, showHidden = false;
+
+  /* ---- tracking state: saved in this browser only ---- */
+  var KEY = 'bham-insurance-jobs-v1';
+  var state = {applied:{}, hidden:{}};
+  try{
+    var raw = localStorage.getItem(KEY);
+    if (raw){
+      var p = JSON.parse(raw);
+      state.applied = p.applied || {};
+      state.hidden  = p.hidden  || {};
+    }
+  }catch(e){ /* private mode or storage blocked — tracking just won't persist */ }
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(e){ /* non-fatal */ }
+  }
+
+  // Stable per-job id, independent of the URL (aggregator links rotate).
+  function idOf(j){
+    var s = (j.title + '|' + j.employer).toLowerCase();
+    var h = 5381;
+    for (var i=0;i<s.length;i++){ h = ((h<<5) + h + s.charCodeAt(i)) >>> 0; }
+    return 'j' + h.toString(36);
+  }
+  JOBS.forEach(function(j){ j._id = idOf(j); });
+
+  var GROUPS = [
+    {key:'new',      name:'New since last scan', note:'first to check'},
+    {key:'alumni',   name:'Baldwin / CAC',        note:'his internship — warmest leads'},
+    {key:'major',    name:'Major brokers — Birmingham', note:''},
+    {key:'regional', name:'Alabama — outside Birmingham', note:'ranked by distance'},
+    {key:'program',  name:'Regional early-career programs', note:'Atlanta & Nashville — higher pay, verify start dates'}
+  ];
+
+  function dist(c){ return CITY[c] != null ? CITY[c] : 999; }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(m){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+
+  function keep(j){
+    // Hidden rows are out unless he's explicitly reviewing them.
+    if (state.hidden[j._id] && !showHidden) return false;
+    if (showHidden && !state.hidden[j._id]) return false;
+    if (hideApplied && state.applied[j._id]) return false;
+
+    if (query){
+      var hay = (j.title+' '+j.employer+' '+j.city+' '+j.note).toLowerCase();
+      if (hay.indexOf(query) === -1) return false;
+    }
+    if (filter === 'bham') return j.city === 'Birmingham, AL';
+    if (filter === 'al')   return /, AL$/.test(j.city) || j.city === 'Remote';
+    if (filter === 'jan')  return j.start !== 'verify start';
+    return true;
+  }
+
+  function card(j){
+    var done = !!state.applied[j._id];
+    var hid  = !!state.hidden[j._id];
+    var tags = '';
+    if (done) tags += '<span class="tag done">Applied</span>';
+    if (j.isNew && !done) tags += '<span class="tag new">New</span>';
+    var d = dist(j.city);
+    tags += '<span class="tag dist">' + (j.city==='Remote' ? 'Remote' : esc(j.city) + (d>0 ? ' · ~'+d+' mi' : ' · home')) + '</span>';
+    if (j.pay && j.pay !== 'Not listed' && j.pay !== 'Varies')
+      tags += '<span class="tag pay">' + esc(j.pay) + '</span>';
+    if (j.start === 'verify start')
+      tags += '<span class="tag warn">Verify start date</span>';
+
+    return '<li class="job'+(done?' applied':'')+(hid?' hidden-row':'')+'" data-id="'+j._id+'">' +
+      '<div class="jtop">' +
+        '<h3 class="jtitle"><a href="'+esc(j.url)+'" target="_blank" rel="noopener noreferrer">'+esc(j.title)+'</a></h3>' +
+        '<a class="go" href="'+esc(j.url)+'" target="_blank" rel="noopener noreferrer">Open listing &rarr;</a>' +
+      '</div>' +
+      '<p class="jmeta"><span class="emp">'+esc(j.employer)+'</span></p>' +
+      '<div class="tags">'+tags+'</div>' +
+      '<p class="jnote">'+esc(j.note)+'</p>' +
+      '<div class="acts">' +
+        '<label class="check'+(done?' on':'')+'">' +
+          '<input type="checkbox" data-act="applied" '+(done?'checked':'')+'> Applied' +
+        '</label>' +
+        '<button class="linkbtn" data-act="hide">'+(hid?'Unhide':'Hide this')+'</button>' +
+      '</div>' +
+    '</li>';
+  }
+
+  function render(){
+    var list = JOBS.filter(keep);
+    var out = document.getElementById('out');
+    var total = JOBS.length, shown = list.length;
+    var newCount = JOBS.filter(function(j){return j.isNew;}).length;
+    var appCount = JOBS.filter(function(j){return state.applied[j._id];}).length;
+    var hidCount = JOBS.filter(function(j){return state.hidden[j._id];}).length;
+
+    var bits = [shown + ' of ' + total + ' listings shown'];
+    if (newCount) bits.push(newCount + ' new this scan');
+    if (appCount) bits.push(appCount + ' applied');
+    if (hidCount) bits.push(hidCount + ' hidden');
+    document.getElementById('count').textContent = bits.join(' · ');
+
+    if (!shown){
+      out.innerHTML = '<div class="empty">' +
+        (showHidden ? 'Nothing hidden yet.' : 'No listings match that filter. Try clearing the search.') +
+        '</div>';
+      return;
+    }
+
+    var html = '';
+    GROUPS.forEach(function(g){
+      var items = g.key === 'new'
+        ? list.filter(function(j){return j.isNew;})
+        : list.filter(function(j){return j.tier === g.key && !j.isNew;});
+      if (!items.length) return;
+      items.sort(function(a,b){
+        return dist(a.city) - dist(b.city) || a.employer.localeCompare(b.employer);
+      });
+      html += '<section class="group"><div class="ghead"><h2>'+esc(g.name)+'</h2>' +
+              (g.note ? '<span class="gnote">'+esc(g.note)+'</span>' : '') +
+              '</div><ul class="jobs">' + items.map(card).join('') + '</ul></section>';
+    });
+    out.innerHTML = html;
+  }
+
+  // Scope chips (mutually exclusive)
+  Array.prototype.forEach.call(document.querySelectorAll('.chip[data-f]'), function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('.chip[data-f]'), function(x){
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      filter = b.dataset.f;
+      render();
+    });
+  });
+
+  // Applied / hidden toggles (independent)
+  var bApplied = document.getElementById('tglApplied');
+  var bHidden  = document.getElementById('tglHidden');
+
+  bApplied.addEventListener('click', function(){
+    hideApplied = !hideApplied;
+    bApplied.setAttribute('aria-pressed', String(hideApplied));
+    render();
+  });
+
+  bHidden.addEventListener('click', function(){
+    showHidden = !showHidden;
+    bHidden.setAttribute('aria-pressed', String(showHidden));
+    bHidden.textContent = showHidden ? 'Back to open roles' : 'Show hidden';
+    render();
+  });
+
+  // Per-card actions — delegated so they survive re-renders
+  document.getElementById('out').addEventListener('click', function(e){
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var li = el.closest('.job');
+    if (!li) return;
+    var id = li.dataset.id;
+
+    if (el.dataset.act === 'applied'){
+      if (el.checked) state.applied[id] = true; else delete state.applied[id];
+    } else if (el.dataset.act === 'hide'){
+      if (state.hidden[id]) delete state.hidden[id]; else state.hidden[id] = true;
+    }
+    save();
+    render();
+  });
+
+  // Reset
+  document.getElementById('reset').addEventListener('click', function(){
+    if (!confirm('Clear all applied checkmarks and unhide everything?')) return;
+    state = {applied:{}, hidden:{}};
+    save();
+    showHidden = false;
+    bHidden.setAttribute('aria-pressed','false');
+    bHidden.textContent = 'Show hidden';
+    hideApplied = false;
+    bApplied.setAttribute('aria-pressed','false');
+    render();
+  });
+
+  // Search
+  var t;
+  document.getElementById('q').addEventListener('input', function(e){
+    clearTimeout(t);
+    var v = e.target.value.trim().toLowerCase();
+    t = setTimeout(function(){ query = v; render(); }, 120);
+  });
+
+  // Timestamp
+  try{
+    document.getElementById('stamp').textContent =
+      new Date(D.updated).toLocaleString('en-US', {
+        weekday:'short', month:'short', day:'numeric',
+        hour:'numeric', minute:'2-digit'
+      });
+  }catch(e){
+    document.getElementById('stamp').textContent = D.updated;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
