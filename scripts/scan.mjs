@@ -78,10 +78,21 @@ console.log(`Loaded ${priorKeys.size} listings from the previous scan.`);
  * 2. Ask Claude to research and return a fresh dataset
  * ------------------------------------------------------------------ */
 
+// Driving miles from Birmingham. Texas is the outer bound.
 const CITIES = {
-  'Birmingham, AL': 0, 'Tuscaloosa, AL': 60, 'Montgomery, AL': 90,
-  'Huntsville, AL': 100, 'Atlanta, GA': 150, 'Alpharetta, GA': 175,
-  'Nashville, TN': 190, 'Mobile, AL': 260, 'Remote': 0
+  'Birmingham, AL': 0,
+  'Tuscaloosa, AL': 60,  'Montgomery, AL': 90,   'Huntsville, AL': 100,
+  'Atlanta, GA': 150,    'Chattanooga, TN': 150, 'Columbus, GA': 160,
+  'Alpharetta, GA': 175, 'Nashville, TN': 190,
+  'Jackson, MS': 240,    'Memphis, TN': 240,     'Knoxville, TN': 260,
+  'Mobile, AL': 260,     'Pensacola, FL': 270,   'Greenville, SC': 300,
+  'New Orleans, LA': 340,'Baton Rouge, LA': 370, 'Louisville, KY': 370,
+  'Charlotte, NC': 380,  'Little Rock, AR': 400, 'Jacksonville, FL': 420,
+  'Raleigh, NC': 500,    'Shreveport, LA': 500,  'Orlando, FL': 530,
+  'Tampa, FL': 530,      'Dallas, TX': 650,      'Fort Worth, TX': 680,
+  'Houston, TX': 680,    'Miami, FL': 760,       'Austin, TX': 780,
+  'San Antonio, TX': 850,
+  'Remote': 0
 };
 
 const PROMPT = `Research currently-open insurance brokerage job openings in the US Southeast and return them as JSON.
@@ -90,11 +101,15 @@ const PROMPT = `Research currently-open insurance brokerage job openings in the 
 December 2026 finance graduate. Completed an insurance internship at CAC / The Baldwin Group in Birmingham, Alabama. Needs a job STARTING JANUARY 2027. Willing to get an Alabama P&C or Life & Health license. Based in Birmingham.
 
 ## GEOGRAPHIC PRIORITY — strict order
-1. Birmingham, AL — the priority. Search this hardest.
-2. Rest of Alabama, nearest first: Tuscaloosa (60mi), Montgomery (90mi), Huntsville (100mi), Mobile (260mi).
-3. Out of state, nearest first: Atlanta GA (150mi), Alpharetta GA (175mi), Nashville TN (190mi).
-4. Fully remote roles welcome at any tier — set city to "Remote".
-Nothing further out than Atlanta/Nashville unless remote or an exceptional named program.
+1. Birmingham, AL — THE priority. Search this hardest and return the most results here.
+2. Rest of Alabama: Tuscaloosa (60mi), Montgomery (90mi), Huntsville (100mi), Mobile (260mi).
+3. Neighbouring states, nearest first: Atlanta & Columbus GA, Chattanooga / Nashville / Memphis / Knoxville TN, Jackson MS, Pensacola & Jacksonville FL, New Orleans & Baton Rouge LA, Greenville SC, Charlotte & Raleigh NC, Louisville KY, Little Rock AR.
+4. Outer bound — TEXAS. Dallas, Fort Worth, Houston, Austin and San Antonio are all in scope. Also Orlando, Tampa and Miami FL.
+5. Fully remote roles welcome at any distance — set city to "Remote".
+
+Texas is the furthest anything should be. Do NOT return roles in California, the Northeast, the Midwest beyond Louisville, or the Mountain West unless they are fully remote.
+
+DISTANCE IS A TIEBREAK, NOT A QUOTA. A strong Birmingham opening always beats a strong Houston one, but include the Houston one too — the board sorts by distance and he can filter.
 
 ## EMPLOYERS TO CHECK BY NAME
 The Baldwin Group / CAC / CAC Specialty (HIGHEST PRIORITY — he interned there), Marsh McLennan Agency, McGriff, EPIC Insurance Brokers, Higginbotham, Arthur J. Gallagher / Gallagher Bassett, The Hilb Group, Aon, WTW, Brown & Brown, Risk Strategies, USI, Alliant, NFP, Hub International, Alfa Insurance, Liberty Mutual, Swiss Re, Beazley, Chubb, Travelers, plus regional Birmingham agencies.
@@ -115,12 +130,21 @@ Run SEPARATE searches by employer name, by job title, and by city — a single b
 ## LIST EVERY DISTINCT OPENING — DO NOT MERGE
 If an employer has three Account Coordinator reqs open, list all three. Separate requisitions are separate opportunities and missing one is far worse than showing one too many. Never collapse roles just because the titles look alike.
 
-The only thing to avoid is listing the IDENTICAL single posting twice because you found it on two different boards. When that happens, keep one and prefer the better link:
+The only thing to avoid is listing the IDENTICAL single posting twice because you found it on two different boards. When that happens, emit ONE entry: put the best link in "url" and EVERY other URL for that same posting in "alsoOn".
+
+Best link order for "url":
  1. The employer's own careers page or ATS (Workday, Greenhouse, Lever, iCIMS…)
  2. An industry board (InsurancePond, GreatInsuranceJobs)
  3. A major aggregator (Indeed, LinkedIn, ZipRecruiter, Glassdoor)
 
-When you are not certain whether two postings are the same req or two openings, INCLUDE BOTH. Err toward showing more.
+Always populate "alsoOn" when a posting appears on more than one site — do not discard the extra URLs. The page shows each site as its own tag, and the scan falls back to them if the main link dies. Example:
+
+  "url": "https://baldwin.wd1.myworkdayjobs.com/...",
+  "alsoOn": ["https://www.indeed.com/viewjob?jk=...", "https://www.linkedin.com/jobs/view/..."]
+
+Use an empty array when it's only on one site.
+
+When you are not certain whether two postings are the same req or two separate openings, INCLUDE BOTH as separate entries. Err toward showing more.
 
 ## EVERY ENTRY NEEDS A WORKING LINK
 Every job must have a "url" to that specific posting. Never emit an entry without one. If no direct per-posting link exists, link to the employer's careers-page search results and begin the note with "Employer careers page — search by title."
@@ -158,7 +182,8 @@ Return ONLY a JSON object, no prose, no markdown fence:
   "cities": ${JSON.stringify(CITIES)},
   "jobs": [
     { "title": "", "employer": "", "city": "<a key in cities>", "pay": "<or 'Not listed'>",
-      "start": "Rolling", "url": "https://...", "posted": "YYYY-MM-DD or null",
+      "start": "Rolling", "url": "https://...", "alsoOn": ["https://...", "https://..."],
+      "posted": "YYYY-MM-DD or null",
       "tier": "alumni|major|regional|program",
       "isNew": false, "note": "one or two plain sentences on fit, no hype" }
   ]
@@ -286,6 +311,15 @@ const TIERS = new Set(['alumni', 'major', 'regional', 'program']);
     j.start = 'Rolling';
   }
 
+  // alsoOn: keep only well-formed URLs that aren't just the primary again.
+  if (Array.isArray(j.alsoOn)) {
+    j.alsoOn = [...new Set(
+      j.alsoOn.filter(u => typeof u === 'string' && /^https?:\/\//i.test(u) && u !== j.url)
+    )];
+  } else {
+    j.alsoOn = [];
+  }
+
   // A posted date must be a real date, and must not be in the future —
   // a hallucinated date would sort a stale listing to the top of the board.
   if (j.posted) {
@@ -351,6 +385,10 @@ for (const found of data.jobs) {
       ...old, ...found,
       firstSeen: old.firstSeen || TODAY,
       posted: found.posted || old.posted || null,
+      // Union the mirrors: a board we saw last week is still worth keeping
+      // as a fallback even if this scan didn't surface it.
+      alsoOn: [...new Set([...(old.alsoOn || []), ...(found.alsoOn || [])])]
+                .filter(u => u !== (found.url || old.url)),
       isNew: false, _miss: 0
     });
     refreshed++;
@@ -490,6 +528,8 @@ async function checkLink(url) {
   }
 }
 
+let promoted = 0;
+
 async function verifyAll(jobs) {
   const queue = [...jobs];
   const tally = { ok: 0, dead: 0, expired: 0, unknown: 0 };
@@ -497,7 +537,26 @@ async function verifyAll(jobs) {
   async function worker() {
     while (queue.length) {
       const j = queue.shift();
-      const { verdict, phrase } = await checkLink(j.url);
+      let { verdict, phrase } = await checkLink(j.url);
+
+      // The primary link is gone, but the same job may still be live on one of
+      // the other boards it was posted to. Try those before writing it off.
+      if ((verdict === 'dead' || verdict === 'expired') && (j.alsoOn || []).length) {
+        for (const alt of j.alsoOn) {
+          const retry = await checkLink(alt);
+          if (retry.verdict === 'ok') {
+            console.log(`  ↻ ${j.title} — primary link gone, promoting mirror:`);
+            console.log(`      ${alt}`);
+            j.alsoOn = [j.url, ...j.alsoOn.filter(u => u !== alt)];
+            j.url = alt;
+            verdict = 'ok';
+            phrase = null;
+            promoted++;
+            break;
+          }
+        }
+      }
+
       tally[verdict]++;
       j.link = verdict;
       j.linkChecked = TODAY;
@@ -539,9 +598,15 @@ if (pending.length) {
 
 data.jobs = data.jobs.filter(j => (j._dead || 0) < DEAD_LIMIT);
 
+const mirrored = data.jobs.filter(j => (j.alsoOn || []).length).length;
+
 console.log(
   `Links: ${tally.ok} live, ${tally.unknown} unverifiable (site blocked the check), ` +
   `${tally.dead} returned 404, ${tally.expired} say the job has closed.`
+);
+console.log(
+  `${mirrored} listing(s) are posted on more than one site` +
+  (promoted ? `; ${promoted} rescued by falling back to a mirror.` : '.')
 );
 
 // If nearly everything came back dead, something is wrong with the checker
