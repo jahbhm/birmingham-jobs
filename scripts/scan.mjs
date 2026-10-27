@@ -104,6 +104,24 @@ Account Coordinator, Client Service Associate/Specialist, Account Administrator,
 
 EXCLUDE: roles requiring 5+ years; commission-only 1099 captive sales (final expense, door-to-door); anything outside the radius that is not remote.
 
+## WHERE TO SEARCH — cover all of these
+Major aggregators: Indeed, LinkedIn Jobs, Glassdoor, ZipRecruiter, SimplyHired, Monster, CareerBuilder, Google Jobs.
+Early-career boards: Handshake, WayUp, RippleMatch, Built In, college job boards.
+Industry boards: InsurancePond, GreatInsuranceJobs, Big I (Independent Insurance Agents), Alabama Independent Insurance Agents, Jobs in Insurance.
+Employer careers sites directly, plus the ATS platforms they run on: Workday, Greenhouse, Lever, iCIMS, SmartRecruiters, Taleo, Paylocity, CareerPlug, Jobvite.
+
+Run SEPARATE searches by employer name, by job title, and by city — a single broad sweep misses most of the market.
+
+## LIST EVERY DISTINCT OPENING — DO NOT MERGE
+If an employer has three Account Coordinator reqs open, list all three. Separate requisitions are separate opportunities and missing one is far worse than showing one too many. Never collapse roles just because the titles look alike.
+
+The only thing to avoid is listing the IDENTICAL single posting twice because you found it on two different boards. When that happens, keep one and prefer the better link:
+ 1. The employer's own careers page or ATS (Workday, Greenhouse, Lever, iCIMS…)
+ 2. An industry board (InsurancePond, GreatInsuranceJobs)
+ 3. A major aggregator (Indeed, LinkedIn, ZipRecruiter, Glassdoor)
+
+When you are not certain whether two postings are the same req or two openings, INCLUDE BOTH. Err toward showing more.
+
 ## EVERY ENTRY NEEDS A WORKING LINK
 Every job must have a "url" to that specific posting. Never emit an entry without one. If no direct per-posting link exists, link to the employer's careers-page search results and begin the note with "Employer careers page — search by title."
 
@@ -364,6 +382,7 @@ console.log(
   `${aging} not seen this scan (kept), ${dropped} aged out.`
 );
 
+
 /* ------------------------------------------------------------------ *
  * 3c. Verify every link before publishing
  *
@@ -389,6 +408,53 @@ const CONCURRENCY  = 6;
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
            '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
+// Phrases a board shows when the req is filled or pulled but the URL still
+// returns 200. These are the ones that only appear on an expired posting —
+// deliberately specific, because something like "no longer" on its own would
+// match ordinary job-description prose.
+const EXPIRED_PHRASES = [
+  'no longer available',
+  'no longer accepting applications',
+  'no longer accepting online applications',
+  'is no longer active',
+  'no longer open',
+  'this job has expired',
+  'this posting has expired',
+  'this listing has expired',
+  'job posting has expired',
+  'posting is no longer',
+  'this position has been filled',
+  'this job has been filled',
+  'position is closed',
+  'this job is closed',
+  'applications are closed',
+  'job posting has been removed',
+  'this job post is closed',
+  'the job you are looking for is not available',
+  'this job may no longer be available',
+  'unfortunately, this job is not available',
+  'this job ad has expired'
+];
+
+const MAX_BODY = 1_500_000;   // don't pull multi-MB pages
+
+function looksExpired(html) {
+  // Strip tags and collapse whitespace so phrases split across markup match.
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+  for (const p of EXPIRED_PHRASES) {
+    if (text.includes(p)) return p;
+  }
+  return null;
+}
+
 async function checkLink(url) {
   const opts = {
     redirect: 'follow',
@@ -397,34 +463,48 @@ async function checkLink(url) {
   };
 
   try {
-    // HEAD first — cheap, and most servers honour it.
-    let res = await fetch(url, { ...opts, method: 'HEAD' });
+    // GET rather than HEAD: a filled posting often still returns 200, so the
+    // only way to know is to read what the page actually says.
+    const res = await fetch(url, { ...opts, method: 'GET' });
 
-    // Plenty of sites don't implement HEAD properly. Retry those with GET.
-    if (res.status === 405 || res.status === 501 || res.status === 403) {
-      res = await fetch(url, { ...opts, method: 'GET' });
+    if (res.status === 404 || res.status === 410) return { verdict: 'dead' };
+    if (!(res.status >= 200 && res.status < 400)) {
+      return { verdict: 'unknown' };   // 403, 429, 999 (LinkedIn), 5xx — blocked, not gone
     }
 
-    if (res.status === 404 || res.status === 410) return 'dead';
-    if (res.ok || (res.status >= 200 && res.status < 400)) return 'ok';
-    return 'unknown';   // 403, 429, 999 (LinkedIn), 5xx — blocked, not gone
+    const type = res.headers.get('content-type') || '';
+    const len  = parseInt(res.headers.get('content-length') || '0', 10);
+    if (!type.includes('html') || len > MAX_BODY) {
+      return { verdict: 'ok' };        // can't read it, but it answered
+    }
+
+    const body = await res.text();
+    if (body.length > MAX_BODY) return { verdict: 'ok' };
+
+    const phrase = looksExpired(body);
+    if (phrase) return { verdict: 'expired', phrase };
+
+    return { verdict: 'ok' };
   } catch (e) {
-    return 'unknown';   // timeout, DNS failure, TLS error
+    return { verdict: 'unknown' };     // timeout, DNS failure, TLS error
   }
 }
 
 async function verifyAll(jobs) {
   const queue = [...jobs];
-  const tally = { ok: 0, dead: 0, unknown: 0 };
+  const tally = { ok: 0, dead: 0, expired: 0, unknown: 0 };
 
   async function worker() {
     while (queue.length) {
       const j = queue.shift();
-      const verdict = await checkLink(j.url);
+      const { verdict, phrase } = await checkLink(j.url);
       tally[verdict]++;
       j.link = verdict;
       j.linkChecked = TODAY;
-      if (verdict === 'dead') {
+      if (phrase) j.expiredPhrase = phrase; else delete j.expiredPhrase;
+
+      // 404 and "no longer available" both mean gone; same two-strike rule.
+      if (verdict === 'dead' || verdict === 'expired') {
         j._dead = (j._dead || 0) + 1;
       } else {
         j._dead = 0;
@@ -439,28 +519,35 @@ async function verifyAll(jobs) {
 console.log(`\nVerifying ${data.jobs.length} links…`);
 const tally = await verifyAll(data.jobs);
 
-const confirmedDead = data.jobs.filter(j => j._dead >= DEAD_LIMIT);
+const confirmedGone = data.jobs.filter(j => j._dead >= DEAD_LIMIT);
 const pending       = data.jobs.filter(j => j._dead === 1);
 
-if (confirmedDead.length) {
-  console.log(`Removing ${confirmedDead.length} link(s) dead on two consecutive scans:`);
-  confirmedDead.forEach(j => console.log(`  ✗ ${j.title} — ${j.employer}`));
+if (confirmedGone.length) {
+  console.log(`Removing ${confirmedGone.length} listing(s) gone on two consecutive scans:`);
+  confirmedGone.forEach(j => console.log(
+    `  ✗ ${j.title} — ${j.employer}` +
+    (j.expiredPhrase ? `  ("${j.expiredPhrase}")` : '  (404)')
+  ));
 }
 if (pending.length) {
-  console.log(`${pending.length} link(s) 404'd once — kept, will drop if dead again next scan:`);
-  pending.forEach(j => console.log(`  ? ${j.title} — ${j.employer}`));
+  console.log(`${pending.length} listing(s) flagged once — kept, will drop if still gone next scan:`);
+  pending.forEach(j => console.log(
+    `  ? ${j.title} — ${j.employer}` +
+    (j.expiredPhrase ? `  ("${j.expiredPhrase}")` : '  (404)')
+  ));
 }
 
 data.jobs = data.jobs.filter(j => (j._dead || 0) < DEAD_LIMIT);
 
 console.log(
   `Links: ${tally.ok} live, ${tally.unknown} unverifiable (site blocked the check), ` +
-  `${tally.dead} returned 404.`
+  `${tally.dead} returned 404, ${tally.expired} say the job has closed.`
 );
 
 // If nearly everything came back dead, something is wrong with the checker
 // rather than with every listing at once. Don't let it empty the board.
-if (tally.dead > 0 && tally.dead >= Math.floor(data.jobs.length * 0.8) && tally.ok === 0) {
+const goneCount = tally.dead + tally.expired;
+if (goneCount > 0 && goneCount >= Math.floor(data.jobs.length * 0.8) && tally.ok === 0) {
   console.error('FATAL: almost every link reported dead and none verified live.');
   console.error('That points at the checker, not the listings. Page left untouched.');
   process.exit(1);

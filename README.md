@@ -131,11 +131,16 @@ The complication is that most job aggregators actively block automated requests.
 
 | Response | Verdict | What happens |
 |---|---|---|
-| 2xx / 3xx | **ok** | Confirmed live, tagged *Link checked* |
-| 404 / 410 | **dead** | Server says it's gone — removed after two consecutive scans |
+| 2xx / 3xx, page reads as open | **ok** | Tagged *Link checked* |
+| Page says the job is filled or expired | **expired** | Removed after two consecutive scans |
+| 404 / 410 | **dead** | Removed after two consecutive scans |
 | 403 / 429 / 999 / 5xx / timeout | **unknown** | Site refused to answer — kept, tagged *Unverified* |
 
-Requests go out six at a time with a real browser user-agent (some servers 404 anything that looks like a bot), HEAD first, falling back to GET for servers that don't implement HEAD properly.
+A filled posting very often still returns HTTP 200 with a "this job is no longer available" banner, so the status code alone isn't enough. Each page is fetched with GET, stripped of tags, and matched against about twenty specific closure phrases — *no longer accepting applications*, *this position has been filled*, *this posting has expired* and similar. Tag-stripping happens before matching so a phrase broken across markup still matches.
+
+The phrases are deliberately long. Something like "no longer" on its own would fire on ordinary copy — "no longer requires a cover letter", "longer tenure earns more PTO" — so every pattern is specific enough that it only appears on a genuinely closed posting.
+
+Requests go out six at a time with a real browser user-agent, since some servers 404 anything that looks like a bot.
 
 The two-strike rule matters: a single 404 can be a deploy blip or a momentary redirect loop, so one bad response flags the listing and a second one on the next scan removes it. There's also a backstop — if nearly every link reports dead and *none* verify live, the run aborts without publishing, since that pattern means the checker broke rather than every employer pulling their posting simultaneously.
 

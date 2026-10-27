@@ -168,7 +168,8 @@
   <div id="out"></div>
 
   <footer>
-    <p><b>How to use this.</b> Every title links straight to the posting, and every link is retested on each scan. <i>Link checked</i> means it answered on the last pass. <i>Unverified</i> means the site refused the check — common on the big boards, and usually not a problem. Anything that returns a genuine 404 twice running gets removed.</p>
+    <p><b>How to use this.</b> Every title links straight to the posting. On each scan the page behind every link is opened and read: <i>Link checked</i> means it loaded and still reads as open, <i>May be closed</i> means the page itself says the job is filled or expired, and <i>Unverified</i> means the site blocked the check — common on the big boards and usually not a problem. Anything that 404s or says it's closed on two scans running is removed.</p>
+    <p><b>Multiple rows for the same job title at one employer are intentional</b> — those are separate openings, not duplicates.</p>
     <p><b>Green rows are new</b> since the last scan, and they group at the top. The shading clears the moment you tick <i>Applied</i>, so anything still green is something you haven't dealt with yet.</p>
     <p><b>Dates.</b> "Posted" is the employer's own date where the listing states one. "Seen" means it didn't, so that's the date this board first picked it up — a floor on its age, not its real age. Either way, newest sits at the top; switch to <i>Closest</i> to sort by distance instead.</p>
     <p><b>Sources.</b> The last tag on each row says where the link goes. Anything marked <i>(direct)</i> is the employer's own careers page — those stay live longer and usually mean a faster application than going through a board.</p>
@@ -596,6 +597,10 @@
       tags += '<span class="tag unk" title="The site blocked our check — the link may still be fine">Unverified</span>';
     else if (j.link === 'dead')
       tags += '<span class="tag warn" title="Returned 404 on the last scan">Link may be dead</span>';
+    else if (j.link === 'expired')
+      tags += '<span class="tag warn" title="' +
+        esc(j.expiredPhrase ? 'Page says: “' + j.expiredPhrase + '”' : 'The posting says it has closed') +
+        '">May be closed</span>';
     if (j.start === 'verify start')
       tags += '<span class="tag warn">Verify start date</span>';
 
