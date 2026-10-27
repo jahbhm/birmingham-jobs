@@ -107,6 +107,13 @@ EXCLUDE: roles requiring 5+ years; commission-only 1099 captive sales (final exp
 ## EVERY ENTRY NEEDS A WORKING LINK
 Every job must have a "url" to that specific posting. Never emit an entry without one. If no direct per-posting link exists, link to the employer's careers-page search results and begin the note with "Employer careers page — search by title."
 
+Prefer the employer's OWN careers-page URL over an aggregator when both exist. Direct links survive longer and the page labels them as "(direct)", which signals a better-quality lead.
+
+## DATE POSTED
+Set "posted" to the date the employer published the listing, as "YYYY-MM-DD", whenever the posting or the search result states it. Job boards usually show this as "Posted 3 days ago", "Active 2 days ago" or an explicit date — convert relative phrasing to an actual date using today's date.
+
+Set "posted" to null when you genuinely cannot tell. Do NOT guess, and do NOT substitute today's date as a placeholder — the page falls back to the date a scan first saw the listing, which is honest, whereas a fabricated date would push a stale role to the top of the board.
+
 ## PRESERVING THE READER'S CHECKMARKS
 The page tracks "applied" by hashing title + employer, NOT url. When a job also appeared in the previous list below, reuse its "title" and "employer" strings EXACTLY, character for character, even if the url changed. Altering them silently erases his checkmark.
 
@@ -133,7 +140,8 @@ Return ONLY a JSON object, no prose, no markdown fence:
   "cities": ${JSON.stringify(CITIES)},
   "jobs": [
     { "title": "", "employer": "", "city": "<a key in cities>", "pay": "<or 'Not listed'>",
-      "start": "Rolling", "url": "https://...", "tier": "alumni|major|regional|program",
+      "start": "Rolling", "url": "https://...", "posted": "YYYY-MM-DD or null",
+      "tier": "alumni|major|regional|program",
       "isNew": false, "note": "one or two plain sentences on fit, no hype" }
   ]
 }
@@ -251,13 +259,27 @@ const TIERS = new Set(['alumni', 'major', 'regional', 'program']);
   if (!TIERS.has(j.tier)) problems.push(`${where}: bad tier "${j.tier}"`);
   if (!j.note) problems.push(`${where}: missing note`);
 
-  // Repair rather than reject for these two.
+  // Repair rather than reject for these.
   if (data.cities[j.city] == null) {
     console.warn(`  note: unknown city "${j.city}" on ${j.title} — filing as Remote`);
     j.city = 'Remote';
   }
   if (j.start !== 'Rolling' && j.start !== 'verify start') {
     j.start = 'Rolling';
+  }
+
+  // A posted date must be a real date, and must not be in the future —
+  // a hallucinated date would sort a stale listing to the top of the board.
+  if (j.posted) {
+    const t = Date.parse(j.posted);
+    if (isNaN(t) || t > Date.now() + 86400000) {
+      console.warn(`  note: dropping implausible posted date "${j.posted}" on ${j.title}`);
+      j.posted = null;
+    } else {
+      j.posted = new Date(t).toISOString().slice(0, 10);
+    }
+  } else {
+    j.posted = null;
   }
 
   // Trust our own diff over the model's.
@@ -289,6 +311,7 @@ if (problems.length) {
 
 const MISS_LIMIT = 6;
 const keyOf = j => `${j.title}|${j.employer}`.toLowerCase();
+const TODAY = new Date().toISOString().slice(0, 10);
 
 const merged = new Map();
 
@@ -304,11 +327,17 @@ for (const found of data.jobs) {
   const old = merged.get(k);
 
   if (old) {
-    // Still live — refresh the details, clear its miss counter, keep it unflagged.
-    merged.set(k, { ...old, ...found, isNew: false, _miss: 0 });
+    // Still live — refresh details, but never move firstSeen: it's the anchor
+    // the page sorts on when a listing has no stated posted date.
+    merged.set(k, {
+      ...old, ...found,
+      firstSeen: old.firstSeen || TODAY,
+      posted: found.posted || old.posted || null,
+      isNew: false, _miss: 0
+    });
     refreshed++;
   } else {
-    merged.set(k, { ...found, isNew: true, _miss: 0 });
+    merged.set(k, { ...found, firstSeen: TODAY, isNew: true, _miss: 0 });
     added++;
   }
 }
@@ -329,12 +358,115 @@ for (const [k, j] of merged) {
 }
 
 data.jobs = [...merged.values()];
-data.updated = new Date().toISOString();
 
 console.log(
   `\nMerge: ${added} added, ${refreshed} refreshed, ` +
   `${aging} not seen this scan (kept), ${dropped} aged out.`
 );
+
+/* ------------------------------------------------------------------ *
+ * 3c. Verify every link before publishing
+ *
+ * A board full of 404s is worse than a short board. But most job aggregators
+ * actively block automated requests, so "didn't return 200" cannot mean
+ * "dead" — that would wipe everything on the first run.
+ *
+ * Three outcomes:
+ *   ok       2xx/3xx — confirmed live
+ *   dead     404 or 410 — the server explicitly says it's gone
+ *   unknown  403 / 429 / 999 / 5xx / timeout / network error — the site
+ *            refused to answer. Keep the listing, mark it unverified.
+ *
+ * A listing is only dropped after TWO consecutive scans report it dead, so a
+ * one-off blip can't delete a real opening.
+ * ------------------------------------------------------------------ */
+
+const DEAD_LIMIT   = 2;
+const LINK_TIMEOUT = 10000;
+const CONCURRENCY  = 6;
+
+// Some sites 404 anything that looks like a bot; a normal UA avoids that.
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+           '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+async function checkLink(url) {
+  const opts = {
+    redirect: 'follow',
+    signal: AbortSignal.timeout(LINK_TIMEOUT),
+    headers: { 'user-agent': UA, 'accept': 'text/html,application/xhtml+xml' }
+  };
+
+  try {
+    // HEAD first — cheap, and most servers honour it.
+    let res = await fetch(url, { ...opts, method: 'HEAD' });
+
+    // Plenty of sites don't implement HEAD properly. Retry those with GET.
+    if (res.status === 405 || res.status === 501 || res.status === 403) {
+      res = await fetch(url, { ...opts, method: 'GET' });
+    }
+
+    if (res.status === 404 || res.status === 410) return 'dead';
+    if (res.ok || (res.status >= 200 && res.status < 400)) return 'ok';
+    return 'unknown';   // 403, 429, 999 (LinkedIn), 5xx — blocked, not gone
+  } catch (e) {
+    return 'unknown';   // timeout, DNS failure, TLS error
+  }
+}
+
+async function verifyAll(jobs) {
+  const queue = [...jobs];
+  const tally = { ok: 0, dead: 0, unknown: 0 };
+
+  async function worker() {
+    while (queue.length) {
+      const j = queue.shift();
+      const verdict = await checkLink(j.url);
+      tally[verdict]++;
+      j.link = verdict;
+      j.linkChecked = TODAY;
+      if (verdict === 'dead') {
+        j._dead = (j._dead || 0) + 1;
+      } else {
+        j._dead = 0;
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return tally;
+}
+
+console.log(`\nVerifying ${data.jobs.length} links…`);
+const tally = await verifyAll(data.jobs);
+
+const confirmedDead = data.jobs.filter(j => j._dead >= DEAD_LIMIT);
+const pending       = data.jobs.filter(j => j._dead === 1);
+
+if (confirmedDead.length) {
+  console.log(`Removing ${confirmedDead.length} link(s) dead on two consecutive scans:`);
+  confirmedDead.forEach(j => console.log(`  ✗ ${j.title} — ${j.employer}`));
+}
+if (pending.length) {
+  console.log(`${pending.length} link(s) 404'd once — kept, will drop if dead again next scan:`);
+  pending.forEach(j => console.log(`  ? ${j.title} — ${j.employer}`));
+}
+
+data.jobs = data.jobs.filter(j => (j._dead || 0) < DEAD_LIMIT);
+
+console.log(
+  `Links: ${tally.ok} live, ${tally.unknown} unverifiable (site blocked the check), ` +
+  `${tally.dead} returned 404.`
+);
+
+// If nearly everything came back dead, something is wrong with the checker
+// rather than with every listing at once. Don't let it empty the board.
+if (tally.dead > 0 && tally.dead >= Math.floor(data.jobs.length * 0.8) && tally.ok === 0) {
+  console.error('FATAL: almost every link reported dead and none verified live.');
+  console.error('That points at the checker, not the listings. Page left untouched.');
+  process.exit(1);
+}
+
+data.updated = new Date().toISOString();
 
 /* ------------------------------------------------------------------ *
  * 4. Splice the new data in

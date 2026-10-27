@@ -56,6 +56,17 @@
   .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
   .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+  .seg{display:inline-flex;gap:0;margin-left:auto}
+  .seg .chip{border-radius:0}
+  .seg .chip:first-child{border-radius:999px 0 0 999px}
+  .seg .chip:last-child{border-radius:0 999px 999px 0;margin-left:-1px}
+
+  .tag.src{color:var(--muted)}
+  .tag.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 30%,transparent)}
+  .tag.unk{color:var(--dim)}
+  .tag.age{color:var(--muted)}
+  .tag.age.fresh{color:var(--green);border-color:color-mix(in srgb,var(--green) 35%,transparent)}
+
   .count{color:var(--dim);font-size:13px;margin:0 0 14px}
 
   section.group{margin:0 0 26px}
@@ -135,7 +146,7 @@
   <header class="top">
     <h1>Insurance Broker Openings</h1>
     <p class="sub">Entry-level and early-career roles. Birmingham first, then ranked by driving distance.</p>
-    <p class="stamp">Last scan: <b id="stamp">—</b> · refreshes every 5 hours</p>
+    <p class="stamp">Last scan: <b id="stamp">—</b> · rescans twice daily on weekdays</p>
   </header>
 
   <div class="bar" role="group" aria-label="Filter listings">
@@ -146,15 +157,21 @@
     <button class="chip" data-f="jan" aria-pressed="false">Jan-start friendly</button>
     <button class="chip" id="tglApplied" aria-pressed="false">Hide applied</button>
     <button class="chip" id="tglHidden" aria-pressed="false">Show hidden</button>
-    <button class="linkbtn" id="reset" style="margin-left:auto">Reset tracking</button>
+    <span class="seg" role="group" aria-label="Sort order">
+      <button class="chip" data-sort="new" aria-pressed="true">Newest</button>
+      <button class="chip" data-sort="near" aria-pressed="false">Closest</button>
+    </span>
+    <button class="linkbtn" id="reset">Reset tracking</button>
   </div>
 
   <p class="count" id="count"></p>
   <div id="out"></div>
 
   <footer>
-    <p><b>How to use this.</b> Every title links straight to the posting. Aggregator links expire — if one 404s, search the title on the employer's own careers page.</p>
+    <p><b>How to use this.</b> Every title links straight to the posting, and every link is retested on each scan. <i>Link checked</i> means it answered on the last pass. <i>Unverified</i> means the site refused the check — common on the big boards, and usually not a problem. Anything that returns a genuine 404 twice running gets removed.</p>
     <p><b>Green rows are new</b> since the last scan, and they group at the top. The shading clears the moment you tick <i>Applied</i>, so anything still green is something you haven't dealt with yet.</p>
+    <p><b>Dates.</b> "Posted" is the employer's own date where the listing states one. "Seen" means it didn't, so that's the date this board first picked it up — a floor on its age, not its real age. Either way, newest sits at the top; switch to <i>Closest</i> to sort by distance instead.</p>
+    <p><b>Sources.</b> The last tag on each row says where the link goes. Anything marked <i>(direct)</i> is the employer's own careers page — those stay live longer and usually mean a faster application than going through a board.</p>
     <p><b>On timing.</b> Brokers fill entry-level roles in 2–6 weeks, so applying late October through November is what produces a January start. Roles marked <span class="tag warn" style="display:inline-block">verify start</span> may begin mid-2027.</p>
     <p><b>Biggest lever.</b> A direct note to the CAC supervisor beats any portal. Second biggest: an Alabama P&amp;C license before January.</p>
     <p><b>Tracking.</b> Checkmarks and hidden rows save in whatever browser you're using and stay there between visits. They're private to that browser — they don't sync across devices and nobody else sees them. New scans keep your checkmarks; a listing stays checked even if its link changes.</p>
@@ -163,7 +180,7 @@
 
 <script type="application/json" id="data">
 {
- "updated": "2026-10-27T16:07:22.937Z",
+ "updated": "2026-10-27T12:00:00-05:00",
  "cities": {
   "Birmingham, AL": 0,
   "Tuscaloosa, AL": 60,
@@ -180,23 +197,85 @@
    "title": "CAC Account Coordinator, Property & Casualty",
    "employer": "The Baldwin Group / CAC",
    "city": "Birmingham, AL",
-   "pay": "Not listed",
+   "pay": "$18.75 – $24.25/hr",
    "start": "Rolling",
    "url": "https://www.insurancepond.com/job/960478/cac-account-coordinator-property-casualty/",
    "tier": "alumni",
    "isNew": false,
-   "note": "Entry-level service role on the P&C team where he already interned, with 0-3 years of experience preferred. The state license can be obtained within the first 60 days."
+   "note": "Entry-level service role on an assigned book in the Education Practice. The standard post-internship landing spot — and he already knows the shop.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   },
   {
-   "title": "CAC Associate Account Executive, Property & Casualty-Middle Market",
+   "title": "Account Coordinator, Senior Living — CAC",
+   "employer": "The Baldwin Group / CAC",
+   "city": "Birmingham, AL",
+   "pay": "Coordinator tier",
+   "start": "Rolling",
+   "url": "https://www.tealhq.com/job/account-coordinator-senior-living_7ea1aff75ace77007233e3464ecbf82a1edd0",
+   "tier": "alumni",
+   "isNew": false,
+   "note": "Same entry tier, different practice group. Apply alongside the P&C coordinator req, not instead of it.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "CAC Account Executive, Property & Casualty",
    "employer": "The Baldwin Group / CAC",
    "city": "Birmingham, AL",
    "pay": "Not listed",
    "start": "Rolling",
-   "url": "https://www.insurancepond.com/job/1004219/cac-associate-account-executive-property-casualty-middle-market/",
+   "url": "https://www.ziprecruiter.com/c/Baldwin/Job/CAC-Account-Executive,-Property-&-Casualty/-in-Birmingham,AL?jid=63286a306edc9856",
    "tier": "alumni",
-   "isNew": true,
-   "note": "Associate-level producing role at his former intern employer, but it asks for 1+ year of experience, so it is a stretch for a December graduate. A license may be obtained within the first 60 days."
+   "isNew": false,
+   "note": "A reach straight out of school, but an internal referral can make it live. Costs nothing to ask.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "All Baldwin Group openings — Birmingham",
+   "employer": "The Baldwin Group / CAC",
+   "city": "Birmingham, AL",
+   "pay": "Varies",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/cmp/The-Baldwin-Group/jobs/l-Birmingham,-AL",
+   "tier": "alumni",
+   "isNew": false,
+   "note": "Employer listing page. New coordinator reqs here reportedly respond within about 3 days.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Insurance Client Service Specialist, Commercial Lines",
+   "employer": "Marsh McLennan Agency",
+   "city": "Birmingham, AL",
+   "pay": "est. $47K – $65K",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-marsh-mclennan-l-birmingham,-al-jobs.html",
+   "tier": "major",
+   "isNew": false,
+   "note": "Better pay than the coordinator tier and reachable with the CAC internship. Strong primary target.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Producer (hybrid)",
+   "employer": "Marsh McLennan Agency",
+   "city": "Birmingham, AL",
+   "pay": "Base + commission",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-marsh-mclennan-l-birmingham,-al-jobs.html",
+   "tier": "major",
+   "isNew": false,
+   "note": "Sales track with tuition reimbursement listed. The finance degree plays well in a producer conversation.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   },
   {
    "title": "Insurance Client Service Associate (entry-level)",
@@ -204,54 +283,181 @@
    "city": "Birmingham, AL",
    "pay": "Not listed",
    "start": "Rolling",
-   "url": "https://www.insurancepond.com/job/986185/insurance-client-service-associate-entry-level/",
+   "url": "https://www.glassdoor.com/Job/birmingham-al-insurance-broker-account-manager-jobs-SRCH_IL.0,13_IC1127429_KO14,46.htm",
    "tier": "major",
    "isNew": false,
-   "note": "Entry-level client service role in the Birmingham office that does not require prior insurance experience and includes training. It is on-site five days a week."
+   "note": "One of the few postings that says entry-level out loud.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Commercial Lines Account Manager",
+   "employer": "Higginbotham",
+   "city": "Birmingham, AL",
+   "pay": "Not listed",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/co/Higginbotham-Insurance-Agency/Jobs/-in-Birmingham,AL",
+   "tier": "major",
+   "isNew": false,
+   "note": "Usually asks 2+ years, but they run a paid internship pipeline, so they do hire young.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Commercial P&C and benefits roles — Birmingham office",
+   "employer": "McGriff (Marsh McLennan)",
+   "city": "Birmingham, AL",
+   "pay": "Varies",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-marsh-&-mclennan-companies-l-birmingham,-al-jobs.html",
+   "tier": "major",
+   "isNew": false,
+   "note": "Office at 2201 4th Ave N. Deep, long-standing Birmingham book.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   },
   {
    "title": "Workers Compensation Claims Trainee",
    "employer": "Gallagher Bassett",
    "city": "Remote",
-   "pay": "$60K/yr (aggregator listing)",
+   "pay": "~$60K",
    "start": "Rolling",
-   "url": "https://jobs.ajg.com/ajg-home/jobs/46731?lang=en-us",
+   "url": "https://www.ziprecruiter.com/co/Gallagher/Jobs/-in-Birmingham,AL",
    "tier": "major",
    "isNew": false,
-   "note": "Southeast claims trainee posting across multiple locations, with a Birmingham-area listing seen on job boards. Good fit for a finance graduate who wants a claims-side entry point."
+   "note": "Claims rather than brokerage, Southeast region, remote-eligible. Best entry pay on the Birmingham list.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   },
   {
-   "title": "Service Associate",
-   "employer": "McGriff",
-   "city": "Birmingham, AL",
+   "title": "Employee Benefits Account Coordinator",
+   "employer": "Higginbotham",
+   "city": "Huntsville, AL",
    "pay": "Not listed",
    "start": "Rolling",
-   "url": "https://www.linkedin.com/jobs/mcgriff-seibels-williams-jobs",
-   "tier": "major",
-   "isNew": true,
-   "note": "Employer careers page — search by title. Birmingham service role found on a LinkedIn listing, so confirm it is still open before applying."
+   "url": "https://www.indeed.com/q-entry-level-account-manager-l-alabama-jobs.html",
+   "tier": "regional",
+   "isNew": false,
+   "note": "Same coordinator tier as the CAC roles, about 100 miles north. A real fallback if Birmingham stays tight.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Claims Adjuster",
+   "employer": "Alfa Insurance",
+   "city": "Huntsville, AL",
+   "pay": "$24/hr",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Insurance/-in-Huntsville,AL",
+   "tier": "regional",
+   "isNew": false,
+   "note": "Alabama-based carrier. Carrier-side time is a respected route into brokerage later.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Entry-level insurance roles — Alabama statewide sweep",
+   "employer": "Multiple employers",
+   "city": "Montgomery, AL",
+   "pay": "$31K – $85K",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Entry-Level-Insurance/--in-Alabama",
+   "tier": "regional",
+   "isNew": false,
+   "note": "Catch-all for Montgomery, Tuscaloosa and Dothan postings the named-employer searches miss.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Insurance roles — Mobile market",
+   "employer": "Multiple employers",
+   "city": "Mobile, AL",
+   "pay": "$47K – $79K",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Insurance/-in-Mobile,AL",
+   "tier": "regional",
+   "isNew": false,
+   "note": "Furthest Alabama market at about 260 miles. Lower priority unless he'd move to the coast.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   },
   {
    "title": "Marsh Risk Early Career Program — Full-Time 2027, Brokerage",
    "employer": "Marsh",
    "city": "Atlanta, GA",
-   "pay": "$70K - $73K (employer provided)",
+   "pay": "$70K – $73K",
    "start": "verify start",
-   "url": "https://careers.marsh.com/global/en/risk-and-insurance-early-career-programs-us-and-canada",
+   "url": "https://www.glassdoor.com/Job/atlanta-insurance-broker-jobs-SRCH_IL.0,7_IC1155583_KO8,24.htm",
    "tier": "program",
    "isNew": false,
-   "note": "Employer careers page — search by title. Two-year full-time cohort program in Marsh's East Market brokerage in Atlanta, which is a cohort rather than a January start."
+   "note": "Highest pay found and a true brokerage rotational program. Confirm the start month — these often begin in summer.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   },
   {
-   "title": "Agency Underwriter I",
-   "employer": "Alfa Insurance",
-   "city": "Montgomery, AL",
+   "title": "Underwriting Development Program — Global Risk Solutions",
+   "employer": "Liberty Mutual",
+   "city": "Atlanta, GA",
+   "pay": "$48K – $137K",
+   "start": "verify start",
+   "url": "https://www.indeed.com/q-entry-level-insurance-l-atlanta,-ga-jobs.html",
+   "tier": "program",
+   "isNew": false,
+   "note": "Structured program, but the listed June 2027 start does not fit a January need. Backup only.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Underwriting Graduate Program 'P28'",
+   "employer": "Beazley Group",
+   "city": "Atlanta, GA",
+   "pay": "Not listed",
+   "start": "verify start",
+   "url": "https://www.indeed.com/q-entry-underwriter-l-atlanta,-ga-jobs.html",
+   "tier": "program",
+   "isNew": false,
+   "note": "Specialty insurance exposure across multiple products. Prestigious and competitive.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Underwriting Analyst — Early Talent 2027",
+   "employer": "Swiss Re",
+   "city": "Alpharetta, GA",
+   "pay": "~$70K",
+   "start": "verify start",
+   "url": "https://www.glassdoor.com/Job/atlanta-underwriter-entry-level-jobs-SRCH_IL.0,7_IC1155583_KO8,31.htm",
+   "tier": "program",
+   "isNew": false,
+   "note": "Reinsurance analyst track. The finance degree is a direct fit for this one.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
+  },
+  {
+   "title": "Underwriter Trainee",
+   "employer": "IFG Companies",
+   "city": "Atlanta, GA",
    "pay": "Not listed",
    "start": "Rolling",
-   "url": "https://alfa-insurance-corporate.careerplug.com/jobs",
-   "tier": "regional",
-   "isNew": true,
-   "note": "Employer careers page — search by title. Montgomery underwriting role on Alfa's careers board; experience requirements were not verified, so check them before applying."
+   "url": "https://www.indeed.com/q-underwriter-trainee-l-atlanta,-ga-jobs.html",
+   "tier": "program",
+   "isNew": false,
+   "note": "Formal curriculum plus live commercial underwriting. The rolling start actually helps for January.",
+   "firstSeen": "2026-10-27",
+   "posted": null,
+   "_miss": 0
   }
  ]
 }
@@ -262,6 +468,7 @@
   var D = JSON.parse(document.getElementById('data').textContent);
   var JOBS = D.jobs, CITY = D.cities;
   var filter = 'all', query = '', hideApplied = false, showHidden = false;
+  var sortMode = 'new';   // 'new' = newest first, 'near' = closest first
 
   /* ---- tracking state: saved in this browser only ---- */
   var KEY = 'bham-insurance-jobs-v1';
@@ -299,6 +506,55 @@
 
   function dist(c){ return CITY[c] != null ? CITY[c] : 999; }
 
+  /* ---- where a listing came from ----
+     Derived from the URL rather than trusted from the data, so it's always
+     right and the scan can't get it wrong. */
+  var BOARDS = {
+    'indeed.com':'Indeed', 'linkedin.com':'LinkedIn', 'glassdoor.com':'Glassdoor',
+    'ziprecruiter.com':'ZipRecruiter', 'insurancepond.com':'InsurancePond',
+    'tealhq.com':'Teal', 'simplyhired.com':'SimplyHired', 'monster.com':'Monster',
+    'careerbuilder.com':'CareerBuilder', 'wayup.com':'WayUp', 'handshake.com':'Handshake',
+    'myworkdayjobs.com':'Workday', 'workday.com':'Workday', 'icims.com':'iCIMS',
+    'greenhouse.io':'Greenhouse', 'lever.co':'Lever', 'careerplug.com':'CareerPlug',
+    'smartrecruiters.com':'SmartRecruiters', 'taleo.net':'Taleo',
+    'paylocity.com':'Paylocity', 'adp.com':'ADP', 'jobvite.com':'Jobvite'
+  };
+
+  function source(url){
+    var host;
+    try { host = new URL(url).hostname.replace(/^www\./,''); }
+    catch(e){ return 'Link'; }
+    for (var d in BOARDS) if (host === d || host.endsWith('.' + d)) return BOARDS[d];
+    // Not a known board — it's the employer's own site, which is the good case.
+    var parts = host.split('.');
+    var name = parts.length > 2 ? parts[parts.length-3] : parts[0];
+    return name.charAt(0).toUpperCase() + name.slice(1) + ' (direct)';
+  }
+
+  /* ---- how old a listing is ----
+     posted  = the date the employer put it up, when we could find one
+     firstSeen = the date a scan first picked it up; always present, so it's
+     the fallback when the posting doesn't state a date. */
+  function when(j){
+    var t = Date.parse(j.posted || '') || Date.parse(j.firstSeen || '') || 0;
+    return t;
+  }
+
+  function ageLabel(j){
+    var iso = j.posted || j.firstSeen;
+    if (!iso) return null;
+    var t = Date.parse(iso);
+    if (!t) return null;
+    var days = Math.floor((Date.now() - t) / 86400000);
+    var verb = j.posted ? 'Posted' : 'Seen';
+    var txt;
+    if (days <= 0)      txt = verb + ' today';
+    else if (days === 1) txt = verb + ' yesterday';
+    else if (days < 30)  txt = verb + ' ' + days + 'd ago';
+    else                 txt = verb + ' ' + new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return { text: txt, fresh: days <= 3 };
+  }
+
   function esc(s){
     return String(s).replace(/[&<>"']/g, function(m){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
@@ -329,8 +585,17 @@
     if (j.isNew && !done) tags += '<span class="tag new">New</span>';
     var d = dist(j.city);
     tags += '<span class="tag dist">' + (j.city==='Remote' ? 'Remote' : esc(j.city) + (d>0 ? ' · ~'+d+' mi' : ' · home')) + '</span>';
+    var age = ageLabel(j);
+    if (age) tags += '<span class="tag age'+(age.fresh?' fresh':'')+'">' + esc(age.text) + '</span>';
     if (j.pay && j.pay !== 'Not listed' && j.pay !== 'Varies')
       tags += '<span class="tag pay">' + esc(j.pay) + '</span>';
+    tags += '<span class="tag src">' + esc(source(j.url)) + '</span>';
+    if (j.link === 'ok')
+      tags += '<span class="tag ok" title="Link confirmed live on the last scan">Link checked</span>';
+    else if (j.link === 'unknown')
+      tags += '<span class="tag unk" title="The site blocked our check — the link may still be fine">Unverified</span>';
+    else if (j.link === 'dead')
+      tags += '<span class="tag warn" title="Returned 404 on the last scan">Link may be dead</span>';
     if (j.start === 'verify start')
       tags += '<span class="tag warn">Verify start date</span>';
 
@@ -379,7 +644,11 @@
         : list.filter(function(j){return j.tier === g.key && !j.isNew;});
       if (!items.length) return;
       items.sort(function(a,b){
-        return dist(a.city) - dist(b.city) || a.employer.localeCompare(b.employer);
+        if (sortMode === 'near')
+          return dist(a.city) - dist(b.city) || when(b) - when(a);
+        // Newest first, distance as the tiebreak.
+        return when(b) - when(a) || dist(a.city) - dist(b.city)
+            || a.employer.localeCompare(b.employer);
       });
       html += '<section class="group"><div class="ghead"><h2>'+esc(g.name)+'</h2>' +
               (g.note ? '<span class="gnote">'+esc(g.note)+'</span>' : '') +
@@ -387,6 +656,17 @@
     });
     out.innerHTML = html;
   }
+
+  // Sort toggle
+  Array.prototype.forEach.call(document.querySelectorAll('.chip[data-sort]'), function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('.chip[data-sort]'), function(x){
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      sortMode = b.dataset.sort;
+      render();
+    });
+  });
 
   // Scope chips (mutually exclusive)
   Array.prototype.forEach.call(document.querySelectorAll('.chip[data-f]'), function(b){

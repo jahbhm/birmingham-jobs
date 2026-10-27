@@ -123,6 +123,24 @@ Merge: 3 added, 4 refreshed, 15 not seen this scan (kept), 0 aged out.
 
 The practical effect is that the board only grows during an active search, scan quality stops being load-bearing, and a genuinely filled role still disappears within a few days rather than lingering forever.
 
+## Every link is tested before publishing
+
+After merging, the scan requests each URL and records what came back.
+
+The complication is that most job aggregators actively block automated requests. Indeed throws 403s, LinkedIn returns its idiosyncratic 999, others rate-limit or simply hang. If "not 200" meant "dead," the first run would delete the entire board. So the checker only trusts an explicit denial:
+
+| Response | Verdict | What happens |
+|---|---|---|
+| 2xx / 3xx | **ok** | Confirmed live, tagged *Link checked* |
+| 404 / 410 | **dead** | Server says it's gone — removed after two consecutive scans |
+| 403 / 429 / 999 / 5xx / timeout | **unknown** | Site refused to answer — kept, tagged *Unverified* |
+
+Requests go out six at a time with a real browser user-agent (some servers 404 anything that looks like a bot), HEAD first, falling back to GET for servers that don't implement HEAD properly.
+
+The two-strike rule matters: a single 404 can be a deploy blip or a momentary redirect loop, so one bad response flags the listing and a second one on the next scan removes it. There's also a backstop — if nearly every link reports dead and *none* verify live, the run aborts without publishing, since that pattern means the checker broke rather than every employer pulling their posting simultaneously.
+
+Adds roughly 10-20 seconds per run and costs nothing.
+
 ## How it protects itself
 
 A bad scan is worse than no scan, so `scan.mjs` refuses to publish unless everything checks out. On any failure it exits non-zero, writes nothing, and the last good page stays live.
