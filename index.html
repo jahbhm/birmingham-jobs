@@ -46,6 +46,26 @@
   .stamp{color:var(--dim);font-size:12.5px;margin-top:10px}
   .stamp b{color:var(--muted);font-weight:600}
 
+  /* Two searches sharing one board. Big, obvious, top-level. */
+  .tracks{display:flex;gap:10px;margin:18px 0 0;flex-wrap:wrap}
+  .track{
+    padding:10px 20px;border-radius:999px;cursor:pointer;white-space:nowrap;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);
+    font-size:14.5px;font-weight:650;letter-spacing:-.01em;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .track:hover{border-color:var(--accent);color:var(--ink)}
+  .track:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .track[aria-pressed="true"]{
+    background:var(--accent);border-color:var(--accent);color:#fff;
+  }
+  .tcount{
+    font-size:12px;font-weight:700;padding:1px 7px;border-radius:999px;
+    background:var(--panel2);color:var(--dim);
+  }
+  .track[aria-pressed="true"] .tcount{background:rgba(255,255,255,.22);color:#fff}
+  .tcount.has-new{background:var(--gold);color:#241a00}
+
   .bar{
     display:flex;flex-wrap:wrap;gap:8px;align-items:center;
     margin:20px 0 16px;padding:12px;background:var(--panel);
@@ -159,14 +179,23 @@
   <header class="top">
     <div class="htop">
       <div>
-        <h1>Insurance Broker Openings</h1>
-        <p class="sub">Entry-level and early-career roles. Birmingham first, then outward by driving distance as far as Texas.</p>
+        <h1 id="h1">Job Board</h1>
+        <p class="sub" id="sub">—</p>
       </div>
       <a class="rescan" id="rescan" href="#" target="_blank" rel="noopener noreferrer">
         <i class="rsicon">&#8635;</i> Run scan now
       </a>
     </div>
     <p class="stamp">Last scan: <b id="stamp">—</b> · rescans twice daily on weekdays</p>
+
+    <div class="tracks" role="group" aria-label="Which search">
+      <button class="track" data-track="insurance" aria-pressed="true">
+        Insurance <span class="tcount" id="c-insurance"></span>
+      </button>
+      <button class="track" data-track="technology" aria-pressed="false">
+        Technology <span class="tcount" id="c-technology"></span>
+      </button>
+    </div>
   </header>
 
   <div class="bar" role="group" aria-label="Filter listings">
@@ -250,7 +279,8 @@
    "note": "Entry-level service role on an assigned book in the Education Practice. The standard post-internship landing spot — and he already knows the shop.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Account Coordinator, Senior Living — CAC",
@@ -264,7 +294,8 @@
    "note": "Same entry tier, different practice group. Apply alongside the P&C coordinator req, not instead of it.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "CAC Account Executive, Property & Casualty",
@@ -278,7 +309,8 @@
    "note": "A reach straight out of school, but an internal referral can make it live. Costs nothing to ask.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "All Baldwin Group openings — Birmingham",
@@ -292,7 +324,8 @@
    "note": "Employer listing page. New coordinator reqs here reportedly respond within about 3 days.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Insurance Client Service Specialist, Commercial Lines",
@@ -306,7 +339,8 @@
    "note": "Better pay than the coordinator tier and reachable with the CAC internship. Strong primary target.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Producer (hybrid)",
@@ -320,7 +354,8 @@
    "note": "Sales track with tuition reimbursement listed. The finance degree plays well in a producer conversation.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Insurance Client Service Associate (entry-level)",
@@ -334,7 +369,8 @@
    "note": "One of the few postings that says entry-level out loud.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Commercial Lines Account Manager",
@@ -348,7 +384,8 @@
    "note": "Usually asks 2+ years, but they run a paid internship pipeline, so they do hire young.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Commercial P&C and benefits roles — Birmingham office",
@@ -362,7 +399,8 @@
    "note": "Office at 2201 4th Ave N. Deep, long-standing Birmingham book.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Workers Compensation Claims Trainee",
@@ -376,7 +414,8 @@
    "note": "Claims rather than brokerage, Southeast region, remote-eligible. Best entry pay on the Birmingham list.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Employee Benefits Account Coordinator",
@@ -390,7 +429,8 @@
    "note": "Same coordinator tier as the CAC roles, about 100 miles north. A real fallback if Birmingham stays tight.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Claims Adjuster",
@@ -404,7 +444,8 @@
    "note": "Alabama-based carrier. Carrier-side time is a respected route into brokerage later.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Entry-level insurance roles — Alabama statewide sweep",
@@ -418,7 +459,8 @@
    "note": "Catch-all for Montgomery, Tuscaloosa and Dothan postings the named-employer searches miss.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Insurance roles — Mobile market",
@@ -432,7 +474,8 @@
    "note": "Furthest Alabama market at about 260 miles. Lower priority unless he'd move to the coast.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Marsh Risk Early Career Program — Full-Time 2027, Brokerage",
@@ -446,7 +489,8 @@
    "note": "Highest pay found and a true brokerage rotational program. Confirm the start month — these often begin in summer.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Underwriting Development Program — Global Risk Solutions",
@@ -460,7 +504,8 @@
    "note": "Structured program, but the listed June 2027 start does not fit a January need. Backup only.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Underwriting Graduate Program 'P28'",
@@ -474,7 +519,8 @@
    "note": "Specialty insurance exposure across multiple products. Prestigious and competitive.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Underwriting Analyst — Early Talent 2027",
@@ -488,7 +534,8 @@
    "note": "Reinsurance analyst track. The finance degree is a direct fit for this one.",
    "firstSeen": "2026-10-27",
    "posted": null,
-   "_miss": 0
+   "_miss": 0,
+   "track": "insurance"
   },
   {
    "title": "Underwriter Trainee",
@@ -502,6 +549,215 @@
    "note": "Formal curriculum plus live commercial underwriting. The rolling start actually helps for January.",
    "firstSeen": "2026-10-27",
    "posted": null,
+   "_miss": 0,
+   "track": "insurance"
+  },
+  {
+   "title": "Director of Enterprise Pipeline Engineering & Automation",
+   "employer": "PNC Financial Services Group",
+   "city": "Birmingham, AL",
+   "pay": "$125K – $264K",
+   "start": "Rolling",
+   "url": "https://www.glassdoor.com/Job/birmingham-vp-or-director-of-engineering-jobs-SRCH_IL.0,10_IC1127429_KO11,40.htm",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Large-bank platform engineering org. Top of the Birmingham pay band for a director seat.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Senior Director of IT and Cybersecurity",
+   "employer": "Birmingham-area employer",
+   "city": "Birmingham, AL",
+   "pay": "$150K – $175K",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-Information-Technology-Director-l-Birmingham,-AL-jobs.html",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Combined IT and security remit. Suits a leader who has carried both.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Director / Senior Director of Information Technology",
+   "employer": "Jack's Family Restaurants",
+   "city": "Birmingham, AL",
+   "pay": "$100K – $140K",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-Director-Information-Technology-l-Birmingham,-AL-jobs.html",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Multi-unit restaurant group headquartered locally. Broad ownership, modest band.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Virtual CTO",
+   "employer": "ITAC Solutions",
+   "city": "Birmingham, AL",
+   "pay": "$150K – $200K",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Cto/-in-Birmingham,AL",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "exec",
+   "isNew": false,
+   "note": "Fractional CTO engagements across client companies. Unusual shape, high variety.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Chief Technology Officer — Birmingham market",
+   "employer": "Multiple employers",
+   "city": "Birmingham, AL",
+   "pay": "$123K – $259K",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-chief-technology-officer-l-birmingham,-al-jobs.html",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "exec",
+   "isNew": false,
+   "note": "Around 17 CTO reqs open locally. Employer listing page — scan for current ones.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Director of Information Technology — Birmingham market",
+   "employer": "Multiple employers",
+   "city": "Birmingham, AL",
+   "pay": "$80K – $169K",
+   "start": "Rolling",
+   "url": "https://www.glassdoor.com/Job/birmingham-director-of-information-technology-jobs-SRCH_IL.0,10_IC1127429_KO11,45.htm",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Roughly 20 director-level IT reqs open in the metro.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Senior Director of Engineering",
+   "employer": "Multiple employers",
+   "city": "Remote",
+   "pay": "$180K – $200K",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Remote-Director-Of-Engineering",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Fully remote. Removes the geography constraint entirely.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Sr Director, Application Engineering",
+   "employer": "Multiple employers",
+   "city": "Remote",
+   "pay": "$220K – $240K",
+   "start": "Rolling",
+   "url": "https://www.glassdoor.com/Job/work-from-home-remote-engineering-director-jobs-SRCH_FW0,14_IL.15,21_IS11047_KO22,42.htm",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Applications org leadership, remote. Strong band.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Director of Engineering — remote roles",
+   "employer": "Multiple employers",
+   "city": "Remote",
+   "pay": "$141K – $225K",
+   "start": "Rolling",
+   "url": "https://builtin.com/jobs/remote/dev-engineering/search/director-of-engineering",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Built In aggregates remote engineering leadership across tech employers.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Sr Director, Engineering",
+   "employer": "Multiple employers",
+   "city": "Dallas, TX",
+   "pay": "$250K – $380K",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Senior-Director-Software-Engineering/-in-Dallas,TX",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Highest band found anywhere on this board. Dallas is the far edge of the radius.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Director, Software Engineering",
+   "employer": "Multiple employers",
+   "city": "Nashville, TN",
+   "pay": "$220K – $275K",
+   "start": "Rolling",
+   "url": "https://www.indeed.com/q-director-of-engineering-l-nashville,-tn-jobs.html",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Strong band about three hours up I-65.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Senior Director of Engineering",
+   "employer": "Multiple employers",
+   "city": "Atlanta, GA",
+   "pay": "$137K avg; R&D to $230K",
+   "start": "Rolling",
+   "url": "https://www.ziprecruiter.com/Jobs/Senior-Director-Of-Engineering/-in-Atlanta,GA?layout=2pane_v2",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Deepest tech market inside two and a half hours.",
+   "track": "technology",
+   "_miss": 0
+  },
+  {
+   "title": "Senior Director of Engineering",
+   "employer": "Multiple employers",
+   "city": "Houston, TX",
+   "pay": "Varies",
+   "start": "Rolling",
+   "url": "https://www.glassdoor.com/Job/houston-senior-director-of-engineering-jobs-SRCH_IL.0,7_IC1140171_KO8,38.htm",
+   "alsoOn": [],
+   "posted": null,
+   "firstSeen": "2026-10-27",
+   "tier": "director",
+   "isNew": false,
+   "note": "Large energy and healthcare tech market. ~459 reqs at this level.",
+   "track": "technology",
    "_miss": 0
   }
  ],
@@ -515,40 +771,66 @@
   var JOBS = D.jobs, CITY = D.cities;
   var filter = 'all', query = '', hideApplied = false, showHidden = false;
   var sortMode = 'new';   // 'new' = newest first, 'near' = closest first
+  var track = 'insurance';
 
   /* ---- tracking state: saved in this browser only ---- */
   var KEY = 'bham-insurance-jobs-v1';
-  var state = {applied:{}, hidden:{}};
+  var state = {applied:{}, hidden:{}, track:'insurance'};
   try{
     var raw = localStorage.getItem(KEY);
     if (raw){
       var p = JSON.parse(raw);
       state.applied = p.applied || {};
       state.hidden  = p.hidden  || {};
+      if (p.track && TRACKS_OK(p.track)) track = p.track;
     }
   }catch(e){ /* private mode or storage blocked — tracking just won't persist */ }
 
+  function TRACKS_OK(t){ return t === 'insurance' || t === 'technology'; }
+
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch(e){ /* non-fatal */ }
+    try{
+      state.track = track;
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }catch(e){ /* non-fatal */ }
   }
 
-  // Stable per-job id, independent of the URL (aggregator links rotate).
+  // Stable per-job id. Track and city are both in the hash: the same title at
+  // the same employer in two cities is two openings and needs two checkmarks.
   function idOf(j){
-    var s = (j.title + '|' + j.employer).toLowerCase();
+    var s = ((j.track || 'insurance') + '|' + j.title + '|' + j.employer + '|' + j.city).toLowerCase();
     var h = 5381;
     for (var i=0;i<s.length;i++){ h = ((h<<5) + h + s.charCodeAt(i)) >>> 0; }
     return 'j' + h.toString(36);
   }
   JOBS.forEach(function(j){ j._id = idOf(j); });
 
-  var GROUPS = [
-    {key:'new',      name:'New since last scan', note:'first to check'},
-    {key:'alumni',   name:'Baldwin / CAC',        note:'his internship — warmest leads'},
-    {key:'major',    name:'Major brokers — Birmingham', note:''},
-    {key:'regional', name:'Alabama — outside Birmingham', note:'ranked by distance'},
-    {key:'program',  name:'Regional early-career programs', note:'Atlanta & Nashville — higher pay, verify start dates'}
-  ];
+  // Each track has its own headline, blurb and section structure.
+  var TRACKS = {
+    insurance: {
+      h1:  'Insurance Broker Openings',
+      sub: 'Entry-level and early-career roles. Birmingham first, then outward by driving distance as far as Texas.',
+      groups: [
+        {key:'new',      name:'New since last scan',  note:'first to check'},
+        {key:'alumni',   name:'Baldwin / CAC',        note:'his internship — warmest leads'},
+        {key:'major',    name:'Major brokers — Birmingham', note:''},
+        {key:'regional', name:'Outside Birmingham',   note:'ranked by distance'},
+        {key:'program',  name:'Early-career programs', note:'higher pay — verify start dates'}
+      ]
+    },
+    technology: {
+      h1:  'Technology Leadership Openings',
+      sub: 'Senior Director and executive roles. Birmingham first, then outward by driving distance as far as Texas, plus fully remote.',
+      groups: [
+        {key:'new',      name:'New since last scan', note:'first to check'},
+        {key:'exec',     name:'Executive',           note:'VP, SVP, CTO, CIO'},
+        {key:'director', name:'Director level',      note:'Sr Director, Director, Head of'},
+        {key:'regional', name:'Other',               note:''}
+      ]
+    }
+  };
+
+  var GROUPS = TRACKS[track].groups;
 
   function dist(c){ return CITY[c] != null ? CITY[c] : 999; }
 
@@ -608,6 +890,8 @@
   }
 
   function keep(j){
+    // Only the active search.
+    if ((j.track || 'insurance') !== track) return false;
     // Hidden rows are out unless he's explicitly reviewing them.
     if (state.hidden[j._id] && !showHidden) return false;
     if (showHidden && !state.hidden[j._id]) return false;
@@ -674,12 +958,28 @@
   }
 
   function render(){
+    GROUPS = TRACKS[track].groups;
+    document.getElementById('h1').textContent  = TRACKS[track].h1;
+    document.getElementById('sub').textContent = TRACKS[track].sub;
+    document.title = TRACKS[track].h1;
+
+    // Per-track counts on the pills, so the other search still signals news.
+    ['insurance','technology'].forEach(function(t){
+      var all = JOBS.filter(function(j){return (j.track||'insurance') === t;});
+      var fresh = all.filter(function(j){return j.isNew && !state.applied[j._id];}).length;
+      var el = document.getElementById('c-' + t);
+      if (!el) return;
+      el.textContent = fresh ? fresh + ' new' : String(all.length);
+      el.className = 'tcount' + (fresh ? ' has-new' : '');
+    });
+
+    var inTrack = JOBS.filter(function(j){return (j.track||'insurance') === track;});
     var list = JOBS.filter(keep);
     var out = document.getElementById('out');
-    var total = JOBS.length, shown = list.length;
-    var newCount = JOBS.filter(function(j){return j.isNew;}).length;
-    var appCount = JOBS.filter(function(j){return state.applied[j._id];}).length;
-    var hidCount = JOBS.filter(function(j){return state.hidden[j._id];}).length;
+    var total = inTrack.length, shown = list.length;
+    var newCount = inTrack.filter(function(j){return j.isNew;}).length;
+    var appCount = inTrack.filter(function(j){return state.applied[j._id];}).length;
+    var hidCount = inTrack.filter(function(j){return state.hidden[j._id];}).length;
 
     var bits = [shown + ' of ' + total + ' listings shown'];
     if (newCount) bits.push(newCount + ' new this scan');
@@ -713,6 +1013,26 @@
     });
     out.innerHTML = html;
   }
+
+  // Track pills — which of the two searches you're looking at
+  Array.prototype.forEach.call(document.querySelectorAll('.track'), function(b){
+    b.setAttribute('aria-pressed', String(b.dataset.track === track));
+    b.addEventListener('click', function(){
+      if (b.dataset.track === track) return;
+      Array.prototype.forEach.call(document.querySelectorAll('.track'), function(x){
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      track = b.dataset.track;
+      save();
+      // Filters are track-specific; reset to a sane default on switch.
+      filter = 'all';
+      Array.prototype.forEach.call(document.querySelectorAll('.chip[data-f]'), function(x){
+        x.setAttribute('aria-pressed', String(x.dataset.f === 'all'));
+      });
+      render();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
 
   // Sort toggle
   Array.prototype.forEach.call(document.querySelectorAll('.chip[data-sort]'), function(b){

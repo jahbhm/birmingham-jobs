@@ -79,16 +79,18 @@ Two things bill, and both matter more than you'd guess.
 
 **Tokens** are the surprise. Search results get fed back as input, and a real run measured **222,000 input tokens**. That's past Claude Haiku's 100k threshold, where pricing steps up from $0.10/$0.50 per million to $0.50/$2.50. So the tokens cost about as much as the searches rather than being a rounding error.
 
-Measured cost per run: **~$0.26.**
+**Each scan now runs two searches**, insurance and technology, so a run costs roughly double a single-track one: **~$0.52.**
 
 | Schedule | Cron | Runs/mo | Est. cost/mo |
 |---|---|---|---|
-| Every 5h, weekdays | `0 */5 * * 1-5` | ~110 | ~$29 |
-| **Every 12h, weekdays** (current) | `0 13,23 * * 1-5` | ~44 | **~$11** |
-| Once daily, weekdays | `0 13 * * 1-5` | ~22 | ~$6 |
-| Mon/Wed/Fri mornings | `0 13 * * 1,3,5` | ~13 | ~$3 |
+| Every 5h, weekdays | `0 */5 * * 1-5` | ~110 | ~$57 |
+| **Every 12h, weekdays** (current) | `0 13,23 * * 1-5` | ~44 | **~$23** |
+| Once daily, weekdays | `0 13 * * 1-5` | ~22 | ~$11 |
+| Mon/Wed/Fri mornings | `0 13 * * 1,3,5` | ~13 | ~$7 |
 
-Currently **twice a day on weekdays, 7am and 5pm Central.**
+Currently **twice a day on weekdays, 7am and 5pm Central** — about **$23/month** with both tracks running.
+
+If that's more than you want to spend, **once daily halves it to ~$11** and costs you very little, because the board accumulates rather than being rebuilt each scan. One line in `scan.yml`.
 
 **Since the merge change, scanning less often costs you much less than it used to.** The board no longer depends on any single scan being complete — listings accumulate and persist for six scans before ageing out. A missed morning just means a listing shows up that evening instead. If $11/month feels steep, **once daily is the better trade now**, and Mon/Wed/Fri is perfectly defensible for a job search measured in weeks.
 

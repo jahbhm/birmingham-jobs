@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 /**
- * Rescan Southeast insurance-brokerage job openings and rewrite index.html.
+ * Rescan job openings for two independent searches and rewrite index.html.
  *
- * Runs on GitHub Actions every 5 hours. No npm dependencies — Node 20+ only.
+ *   insurance  — entry-level brokerage roles, for a Dec-2026 finance grad
+ *   technology — Senior Director and executive technology leadership
+ *
+ * Both cover the same geography: Birmingham first, outward to Texas.
+ * Runs on GitHub Actions. No npm dependencies — Node 20+ only.
  *
  * Design notes:
  *  - The page keeps its data in one <script type="application/json" id="data"> block.
  *    We replace ONLY that block, never the CSS/markup/behaviour below it.
  *  - If anything fails validation we exit non-zero WITHOUT writing, so a bad run
  *    leaves the last known-good page live rather than publishing garbage.
- *  - "applied" checkmarks in the reader's browser are keyed on title+employer,
- *    so the model is told to keep those strings stable across runs.
+ *  - "applied" checkmarks live in the reader's browser, keyed on
+ *    track+title+employer+city, so the model is told to keep those stable.
+ *  - A failure in one track never touches the other track's listings.
  *
  * Env:
  *   ANTHROPIC_API_KEY  required
@@ -70,9 +75,17 @@ try {
 }
 
 const priorKeys = new Set(
-  (previous.jobs || []).map(j => `${j.title}|${j.employer}`.toLowerCase())
+  (previous.jobs || []).map(j => `${j.track || 'insurance'}|${j.title}|${j.employer}|${j.city}`.toLowerCase())
 );
-console.log(`Loaded ${priorKeys.size} listings from the previous scan.`);
+{
+  const byTrack = {};
+  (previous.jobs || []).forEach(j => {
+    const t = j.track || 'insurance';
+    byTrack[t] = (byTrack[t] || 0) + 1;
+  });
+  console.log(`Loaded ${priorKeys.size} listings from the previous scan ` +
+    `(${Object.entries(byTrack).map(([t, n]) => `${t}: ${n}`).join(', ') || 'none'}).`);
+}
 
 /* ------------------------------------------------------------------ *
  * 2. Ask Claude to research and return a fresh dataset
@@ -95,7 +108,7 @@ const CITIES = {
   'Remote': 0
 };
 
-const PROMPT = `Research currently-open insurance brokerage job openings in the US Southeast and return them as JSON.
+const INSURANCE_PROMPT = `Research currently-open insurance brokerage job openings in the US Southeast and return them as JSON.
 
 ## CANDIDATE
 December 2026 finance graduate. Completed an insurance internship at CAC / The Baldwin Group in Birmingham, Alabama. Needs a job STARTING JANUARY 2027. Willing to get an Alabama P&C or Life & Health license. Based in Birmingham.
@@ -157,7 +170,7 @@ Set "posted" to the date the employer published the listing, as "YYYY-MM-DD", wh
 Set "posted" to null when you genuinely cannot tell. Do NOT guess, and do NOT substitute today's date as a placeholder — the page falls back to the date a scan first saw the listing, which is honest, whereas a fabricated date would push a stale role to the top of the board.
 
 ## PRESERVING THE READER'S CHECKMARKS
-The page tracks "applied" by hashing title + employer, NOT url. When a job also appeared in the previous list below, reuse its "title" and "employer" strings EXACTLY, character for character, even if the url changed. Altering them silently erases his checkmark.
+The page tracks "applied" by hashing title + employer + city, NOT url. When a job also appeared in the previous list below, reuse its "title", "employer" and "city" values EXACTLY, character for character, even if the url changed. Altering them silently erases his checkmark.
 
 ## PREVIOUS SCAN — use for the isNew flag
 ${JSON.stringify((previous.jobs || []).map(j => ({ title: j.title, employer: j.employer })), null, 1)}
@@ -191,11 +204,97 @@ Return ONLY a JSON object, no prose, no markdown fence:
 
 Aim for 15-30 solid listings. Quality over volume — skip anything you cannot link.`;
 
-async function callClaude() {
+const TECHNOLOGY_PROMPT = `Research currently-open SENIOR TECHNOLOGY LEADERSHIP roles and return them as JSON.
+
+## CANDIDATE
+An experienced digital/engineering leader based in Birmingham, Alabama, currently running engineering for a media organisation. Looking at Senior Director and executive-level technology roles. Not an individual-contributor search.
+
+## SENIORITY — this is the hard filter
+INCLUDE: Senior Director, Director, Head of Engineering/Technology/Digital/Product, VP / SVP / EVP of Engineering or Technology, Chief Technology Officer, Chief Information Officer, Chief Digital Officer, Chief Product Officer, Head of Platform, Senior Director of IT, Director of Software Engineering, VP of Digital.
+
+EXCLUDE ABSOLUTELY: individual contributor roles at any level (Senior Engineer, Staff, Principal Engineer, Architect with no reports), Engineering Manager and Senior Engineering Manager, Scrum Master, Project Manager, Technical Lead, Product Manager below Director, and anything with "Associate", "Junior" or "Entry" in the title. If a posting does not clearly manage managers or own an entire function, LEAVE IT OUT.
+
+## GEOGRAPHIC PRIORITY — same radius as the other search
+1. Birmingham, AL — THE priority. Search this hardest.
+2. Rest of Alabama: Huntsville (100mi, strong tech/defence market), Montgomery, Tuscaloosa, Mobile.
+3. Neighbouring states, nearest first: Atlanta GA, Chattanooga / Nashville / Memphis / Knoxville TN, Jackson MS, New Orleans & Baton Rouge LA, Greenville SC, Charlotte & Raleigh NC, Louisville KY, Little Rock AR, Jacksonville / Orlando / Tampa FL.
+4. Outer bound — TEXAS. Dallas, Fort Worth, Houston, Austin, San Antonio.
+5. FULLY REMOTE roles are high value at this level — include them generously, city "Remote".
+
+Texas is the furthest. No California, Northeast, Midwest beyond Louisville, or Mountain West unless fully remote.
+
+## SECTORS WORTH EXTRA ATTENTION
+Media and broadcast, streaming and OTT, publishing, non-profit and faith-based organisations, healthcare systems, financial services and insurance technology, higher education, utilities, and logistics — these match his background. But do not restrict the search to them.
+
+## WHERE TO SEARCH — cover all of these
+Major aggregators: LinkedIn Jobs, Indeed, Glassdoor, ZipRecruiter, Google Jobs, Monster, CareerBuilder.
+Executive and tech-specific: Built In, Dice, The Ladders, ExecThread, Otta, Hired, Wellfound, RemoteRocketship, We Work Remotely, FlexJobs.
+Employer careers sites and ATS platforms: Workday, Greenhouse, Lever, iCIMS, SmartRecruiters, Taleo, Ashby, Jobvite.
+Also check executive search listings when the hiring company is named.
+
+Run SEPARATE searches by title, by city, and by sector.
+
+## LIST EVERY DISTINCT OPENING — DO NOT MERGE
+If an employer has two director-level reqs open, list both. Never collapse roles because the titles look similar.
+
+The only thing to avoid is listing the IDENTICAL posting twice from two boards. Then emit ONE entry: best link in "url", every other URL in "alsoOn".
+
+Best link order for "url":
+ 1. Employer careers page or ATS
+ 2. A tech-specific board (Built In, Dice)
+ 3. A major aggregator (LinkedIn, Indeed, ZipRecruiter, Glassdoor)
+
+Always populate "alsoOn" when a posting is on several sites. Use an empty array when it is only on one.
+
+When unsure whether two postings are the same req or two openings, INCLUDE BOTH.
+
+## EVERY ENTRY NEEDS A WORKING LINK
+Every job must have a "url" to that specific posting. Never emit an entry without one. If no per-posting link exists, link to the employer's careers-page search results and begin the note with "Employer careers page — search by title."
+
+## DATE POSTED
+Set "posted" to the publication date as "YYYY-MM-DD" when the posting or search result states it; convert "3 days ago" style phrasing using today's date. Set it to null when you cannot tell. Never guess and never substitute today's date.
+
+## COMPENSATION
+Include the salary band in "pay" whenever it is published — it matters a great deal at this level. Use "Not listed" when it genuinely isn't shown.
+
+## PRESERVING THE READER'S CHECKMARKS
+When a job also appeared in the previous list below, reuse its "title", "employer" and "city" values EXACTLY, character for character, even if the url changed.
+
+## PREVIOUS SCAN — use for the isNew flag
+${JSON.stringify((previous.jobs || []).filter(j => j.track === 'technology').map(j => ({ title: j.title, employer: j.employer })), null, 1)}
+
+Anything not in that list is new. Drop listings clearly taken down; when unsure, keep.
+
+## TIERS
+"exec"     = VP, SVP, EVP, CTO, CIO, CDO, CPO, Chief anything
+"director" = Senior Director, Director, Head of
+"regional" = anything leadership-level that fits neither cleanly
+
+## START FIELD
+Always "Rolling" for this search unless a posting explicitly names a future cohort start, in which case "verify start".
+
+## OUTPUT
+Return ONLY a JSON object, no prose, no markdown fence:
+
+{
+  "updated": "<ISO 8601 with -06:00 offset>",
+  "cities": ${JSON.stringify(CITIES)},
+  "jobs": [
+    { "title": "", "employer": "", "city": "<a key in cities>", "pay": "<band or 'Not listed'>",
+      "start": "Rolling", "url": "https://...", "alsoOn": [],
+      "posted": "YYYY-MM-DD or null",
+      "tier": "exec|director|regional",
+      "isNew": false, "note": "one or two plain sentences on fit, no hype" }
+  ]
+}
+
+Aim for 15-30 solid listings. Quality over volume — skip anything you cannot link, and skip anything below Director.`;
+
+async function callClaude(prompt) {
   const body = {
     model: MODEL,
     max_tokens: 16000,
-    messages: [{ role: 'user', content: PROMPT }],
+    messages: [{ role: 'user', content: prompt }],
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: MAX_SEARCHES }]
   };
 
@@ -234,37 +333,22 @@ async function callClaude() {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-console.log(`Researching with ${MODEL} (search budget: ${MAX_SEARCHES})…`);
-let reply;
-try {
-  reply = await callClaude();
-} catch (e) {
-  console.error(`FATAL: research call failed — ${e.message}`);
-  console.error('Page left untouched.');
-  process.exit(1);
-}
-
-// Concatenate text blocks; skip the server-side search tool blocks.
-const text = (reply.content || [])
-  .filter(b => b.type === 'text')
-  .map(b => b.text)
-  .join('')
-  .trim();
-
-if (reply.usage) {
-  const u = reply.usage;
-  console.log(`Tokens — in: ${u.input_tokens}, out: ${u.output_tokens}` +
-    (u.server_tool_use ? `, searches: ${u.server_tool_use.web_search_requests}` : ''));
-}
-
-if (!text) {
-  console.error('FATAL: model returned no text. Page left untouched.');
-  process.exit(1);
-}
-
 /* ------------------------------------------------------------------ *
- * 3. Parse and validate before touching the page
+ * 2b. Research each track
+ *
+ * Two independent searches share this board: the insurance search and the
+ * technology-leadership search. They get separate prompts and separate API
+ * calls — one combined prompt produces muddled results, because the
+ * seniority filters are opposites (entry-level vs director-and-above).
+ *
+ * A failure in one track must not sink the other. Each is validated on its
+ * own, and the run only aborts if BOTH come back unusable.
  * ------------------------------------------------------------------ */
+
+const TIERS_BY_TRACK = {
+  insurance:  new Set(['alumni', 'major', 'regional', 'program']),
+  technology: new Set(['exec', 'director', 'regional'])
+};
 
 function extractJson(s) {
   // Tolerate a stray ```json fence or leading prose.
@@ -275,80 +359,132 @@ function extractJson(s) {
   return JSON.parse(s.slice(a, b + 1));
 }
 
-let data;
-try {
-  data = extractJson(text);
-} catch (e) {
-  console.error(`FATAL: could not parse model output — ${e.message}`);
-  console.error('First 500 chars:\n' + text.slice(0, 500));
-  process.exit(1);
-}
+async function researchTrack(track, prompt) {
+  console.log(`\n── ${track} ─────────────────────────────`);
+  console.log(`Researching with ${MODEL} (search budget: ${MAX_SEARCHES})…`);
 
-const problems = [];
-
-if (!Array.isArray(data.jobs) || data.jobs.length === 0) {
-  problems.push('jobs array is missing or empty');
-}
-if (!data.cities || typeof data.cities !== 'object') {
-  data.cities = CITIES; // non-fatal, just restore it
-}
-
-const TIERS = new Set(['alumni', 'major', 'regional', 'program']);
-
-(data.jobs || []).forEach((j, i) => {
-  const where = `job[${i}] ${j.title || '(untitled)'}`;
-  if (!j.title || !j.employer) problems.push(`${where}: missing title or employer`);
-  if (!j.url || !/^https?:\/\//i.test(j.url)) problems.push(`${where}: missing or malformed url`);
-  if (!TIERS.has(j.tier)) problems.push(`${where}: bad tier "${j.tier}"`);
-  if (!j.note) problems.push(`${where}: missing note`);
-
-  // Repair rather than reject for these.
-  if (data.cities[j.city] == null) {
-    console.warn(`  note: unknown city "${j.city}" on ${j.title} — filing as Remote`);
-    j.city = 'Remote';
-  }
-  if (j.start !== 'Rolling' && j.start !== 'verify start') {
-    j.start = 'Rolling';
+  let reply;
+  try {
+    reply = await callClaude(prompt);
+  } catch (e) {
+    console.error(`  research call failed — ${e.message}`);
+    return null;
   }
 
-  // alsoOn: keep only well-formed URLs that aren't just the primary again.
-  if (Array.isArray(j.alsoOn)) {
-    j.alsoOn = [...new Set(
-      j.alsoOn.filter(u => typeof u === 'string' && /^https?:\/\//i.test(u) && u !== j.url)
-    )];
-  } else {
-    j.alsoOn = [];
+  const text = (reply.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('')
+    .trim();
+
+  if (reply.usage) {
+    const u = reply.usage;
+    console.log(`  Tokens — in: ${u.input_tokens}, out: ${u.output_tokens}` +
+      (u.server_tool_use ? `, searches: ${u.server_tool_use.web_search_requests}` : ''));
   }
 
-  // A posted date must be a real date, and must not be in the future —
-  // a hallucinated date would sort a stale listing to the top of the board.
-  if (j.posted) {
-    const t = Date.parse(j.posted);
-    if (isNaN(t) || t > Date.now() + 86400000) {
-      console.warn(`  note: dropping implausible posted date "${j.posted}" on ${j.title}`);
-      j.posted = null;
-    } else {
-      j.posted = new Date(t).toISOString().slice(0, 10);
+  if (!text) {
+    console.error('  model returned no text.');
+    return null;
+  }
+
+  let parsed;
+  try {
+    parsed = extractJson(text);
+  } catch (e) {
+    console.error(`  could not parse model output — ${e.message}`);
+    console.error('  first 300 chars: ' + text.slice(0, 300));
+    return null;
+  }
+
+  if (!Array.isArray(parsed.jobs) || parsed.jobs.length < 3) {
+    console.error(`  only ${(parsed.jobs || []).length} listings returned — treating as a failed scan.`);
+    return null;
+  }
+
+  const validTiers = TIERS_BY_TRACK[track];
+  const problems = [];
+  const clean = [];
+
+  for (const [i, j] of parsed.jobs.entries()) {
+    const where = `${track}[${i}] ${j.title || '(untitled)'}`;
+
+    if (!j.title || !j.employer) { problems.push(`${where}: missing title or employer`); continue; }
+    if (!j.url || !/^https?:\/\//i.test(j.url)) { problems.push(`${where}: missing or malformed url`); continue; }
+    if (!j.note) j.note = '';
+
+    // Repair rather than reject.
+    if (!validTiers.has(j.tier)) {
+      j.tier = 'regional';
     }
-  } else {
-    j.posted = null;
+    if (CITIES[j.city] == null) {
+      console.warn(`  note: unknown city "${j.city}" on ${j.title} — filing as Remote`);
+      j.city = 'Remote';
+    }
+    if (j.start !== 'Rolling' && j.start !== 'verify start') j.start = 'Rolling';
+
+    if (Array.isArray(j.alsoOn)) {
+      j.alsoOn = [...new Set(
+        j.alsoOn.filter(u => typeof u === 'string' && /^https?:\/\//i.test(u) && u !== j.url)
+      )];
+    } else {
+      j.alsoOn = [];
+    }
+
+    if (j.posted) {
+      const t = Date.parse(j.posted);
+      if (isNaN(t) || t > Date.now() + 86400000) {
+        console.warn(`  note: dropping implausible posted date "${j.posted}" on ${j.title}`);
+        j.posted = null;
+      } else {
+        j.posted = new Date(t).toISOString().slice(0, 10);
+      }
+    } else {
+      j.posted = null;
+    }
+
+    j.track = track;
+    clean.push(j);
   }
 
-  // Trust our own diff over the model's.
-  j.isNew = !priorKeys.has(`${j.title}|${j.employer}`.toLowerCase());
-});
+  if (problems.length) {
+    console.warn(`  skipped ${problems.length} malformed entr${problems.length === 1 ? 'y' : 'ies'}:`);
+    problems.slice(0, 8).forEach(p => console.warn('    - ' + p));
+  }
 
-// A scan returning almost nothing means the research failed, not that the
-// market emptied out. Merging (below) makes this non-destructive either way.
-if ((data.jobs || []).length < 3) {
-  problems.push(`only ${data.jobs.length} listings returned — treating as a failed scan`);
+  if (clean.length < 3) {
+    console.error(`  only ${clean.length} usable listings after validation — treating as failed.`);
+    return null;
+  }
+
+  console.log(`  ${clean.length} usable listings.`);
+  return clean;
 }
 
-if (problems.length) {
-  console.error('FATAL: validation failed. Page left untouched.');
-  problems.slice(0, 20).forEach(p => console.error('  - ' + p));
+// Run both tracks. Sequential rather than parallel so the log reads cleanly
+// and the two searches don't contend for the same rate limit.
+const insuranceJobs  = await researchTrack('insurance',  INSURANCE_PROMPT);
+const technologyJobs = await researchTrack('technology', TECHNOLOGY_PROMPT);
+
+if (!insuranceJobs && !technologyJobs) {
+  console.error('\nFATAL: both searches failed. Page left untouched.');
   process.exit(1);
 }
+if (!insuranceJobs)  console.warn('\nInsurance search failed — keeping its existing listings untouched.');
+if (!technologyJobs) console.warn('\nTechnology search failed — keeping its existing listings untouched.');
+
+// Only the tracks that succeeded get refreshed; a failed track's existing
+// listings pass through the merge unchanged rather than ageing out.
+const freshTracks = new Set(
+  [insuranceJobs && 'insurance', technologyJobs && 'technology'].filter(Boolean)
+);
+
+const data = {
+  updated: new Date().toISOString(),
+  repo: previous.repo,
+  cities: CITIES,
+  jobs: [...(insuranceJobs || []), ...(technologyJobs || [])]
+};
 
 /* ------------------------------------------------------------------ *
  * 3b. Merge into the existing board rather than replacing it
@@ -362,7 +498,9 @@ if (problems.length) {
  * ------------------------------------------------------------------ */
 
 const MISS_LIMIT = 6;
-const keyOf = j => `${j.title}|${j.employer}`.toLowerCase();
+// City is part of the key: the same title at the same employer in two cities
+// is two openings, not one. Leaving it out silently merged them.
+const keyOf = j => `${j.track || 'insurance'}|${j.title}|${j.employer}|${j.city}`.toLowerCase();
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const merged = new Map();
@@ -404,6 +542,8 @@ let dropped = 0, aging = 0;
 
 for (const [k, j] of merged) {
   if (seen.has(k)) continue;
+  // A track whose research failed this run shouldn't have its listings aged out.
+  if (!freshTracks.has(j.track || 'insurance')) continue;
   j._miss = (j._miss || 0) + 1;
   if (j._miss >= MISS_LIMIT) {
     merged.delete(k);
@@ -640,10 +780,23 @@ try {
 writeFileSync(PAGE, rebuilt);
 
 const fresh = data.jobs.filter(j => j.isNew);
-const bham  = data.jobs.filter(j => j.city === 'Birmingham, AL').length;
 
-console.log(`\nWrote ${data.jobs.length} listings (${bham} in Birmingham), ${fresh.length} new.`);
+console.log('\n──────────────────────────────────────');
+for (const t of ['insurance', 'technology']) {
+  const inT  = data.jobs.filter(j => (j.track || 'insurance') === t);
+  const bham = inT.filter(j => j.city === 'Birmingham, AL').length;
+  const nw   = inT.filter(j => j.isNew).length;
+  console.log(`${t.padEnd(11)} ${String(inT.length).padStart(3)} listings  ` +
+    `(${bham} Birmingham, ${nw} new)`);
+}
+console.log(`${'total'.padEnd(11)} ${String(data.jobs.length).padStart(3)} listings`);
+
 if (fresh.length) {
   console.log('\nNew since last scan:');
-  fresh.forEach(j => console.log(`  • ${j.title} — ${j.employer} (${j.city})\n    ${j.url}`));
+  for (const t of ['insurance', 'technology']) {
+    const f = fresh.filter(j => (j.track || 'insurance') === t);
+    if (!f.length) continue;
+    console.log(`  [${t}]`);
+    f.forEach(j => console.log(`    • ${j.title} — ${j.employer} (${j.city})\n      ${j.url}`));
+  }
 }
