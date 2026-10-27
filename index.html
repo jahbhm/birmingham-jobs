@@ -11,6 +11,7 @@
     --ink:#e9eef4; --muted:#95a3b3; --dim:#6d7d8e;
     --accent:#4da3ff; --accent2:#1b6fc4;
     --gold:#f0b429; --green:#3fb950; --red:#f0603e;
+    --newbg:#15271c; --newline:#2f6b40;
     --radius:12px;
   }
   @media (prefers-color-scheme: light){
@@ -18,6 +19,7 @@
       --bg:#f6f8fa; --panel:#ffffff; --panel2:#f0f3f7; --line:#dde3ea;
       --ink:#16202b; --muted:#5a6B7c; --dim:#7b8a99;
       --accent:#1b6fc4; --accent2:#0d4e92;
+      --newbg:#e8f8ed; --newline:#8fd4a5;
     }
   }
   *{box-sizing:border-box}
@@ -91,6 +93,15 @@
   .go{font-size:13px;font-weight:650;color:var(--accent);text-decoration:none;white-space:nowrap}
   .go:hover{text-decoration:underline}
 
+  /* --- new since last scan --- */
+  /* Shading drops away once he's applied, so green always means "needs a look". */
+  li.job.is-new:not(.applied){
+    background:var(--newbg);
+    border-color:var(--newline);
+    box-shadow:inset 3px 0 0 var(--green);
+  }
+  li.job.is-new:not(.applied):hover{border-color:var(--green)}
+
   /* --- applied / hidden state --- */
   li.job.applied{border-color:color-mix(in srgb,var(--green) 55%,var(--line))}
   li.job.applied .jtitle a{color:var(--muted)}
@@ -143,6 +154,7 @@
 
   <footer>
     <p><b>How to use this.</b> Every title links straight to the posting. Aggregator links expire — if one 404s, search the title on the employer's own careers page.</p>
+    <p><b>Green rows are new</b> since the last scan, and they group at the top. The shading clears the moment you tick <i>Applied</i>, so anything still green is something you haven't dealt with yet.</p>
     <p><b>On timing.</b> Brokers fill entry-level roles in 2–6 weeks, so applying late October through November is what produces a January start. Roles marked <span class="tag warn" style="display:inline-block">verify start</span> may begin mid-2027.</p>
     <p><b>Biggest lever.</b> A direct note to the CAC supervisor beats any portal. Second biggest: an Alabama P&amp;C license before January.</p>
     <p><b>Tracking.</b> Checkmarks and hidden rows save in whatever browser you're using and stay there between visits. They're private to that browser — they don't sync across devices and nobody else sees them. New scans keep your checkmarks; a listing stays checked even if its link changes.</p>
@@ -261,7 +273,7 @@
     if (j.start === 'verify start')
       tags += '<span class="tag warn">Verify start date</span>';
 
-    return '<li class="job'+(done?' applied':'')+(hid?' hidden-row':'')+'" data-id="'+j._id+'">' +
+    return '<li class="job'+(j.isNew?' is-new':'')+(done?' applied':'')+(hid?' hidden-row':'')+'" data-id="'+j._id+'">' +
       '<div class="jtop">' +
         '<h3 class="jtitle"><a href="'+esc(j.url)+'" target="_blank" rel="noopener noreferrer">'+esc(j.title)+'</a></h3>' +
         '<a class="go" href="'+esc(j.url)+'" target="_blank" rel="noopener noreferrer">Open listing &rarr;</a>' +

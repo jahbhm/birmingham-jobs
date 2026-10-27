@@ -264,12 +264,10 @@ const TIERS = new Set(['alumni', 'major', 'regional', 'program']);
   j.isNew = !priorKeys.has(`${j.title}|${j.employer}`.toLowerCase());
 });
 
-// Guard against a bad run gutting the list.
-if ((data.jobs || []).length < Math.max(5, Math.floor(priorKeys.size * 0.4))) {
-  problems.push(
-    `only ${data.jobs.length} listings returned vs ${priorKeys.size} previously — ` +
-    `looks like a failed scan, refusing to publish`
-  );
+// A scan returning almost nothing means the research failed, not that the
+// market emptied out. Merging (below) makes this non-destructive either way.
+if ((data.jobs || []).length < 3) {
+  problems.push(`only ${data.jobs.length} listings returned — treating as a failed scan`);
 }
 
 if (problems.length) {
@@ -278,7 +276,65 @@ if (problems.length) {
   process.exit(1);
 }
 
+/* ------------------------------------------------------------------ *
+ * 3b. Merge into the existing board rather than replacing it
+ *
+ * Any single scan sees a partial slice of the market — a different set of
+ * search results, a model that stopped early, an aggregator that was slow.
+ * Replacing wholesale means a thin Tuesday deletes what a good Monday found.
+ * So the board accumulates: new finds get added, existing ones get refreshed,
+ * and a listing is only dropped after it's gone missing MISS_LIMIT scans in a
+ * row — about three days at two scans a day.
+ * ------------------------------------------------------------------ */
+
+const MISS_LIMIT = 6;
+const keyOf = j => `${j.title}|${j.employer}`.toLowerCase();
+
+const merged = new Map();
+
+// Start from what's already on the board.
+for (const old of previous.jobs || []) {
+  merged.set(keyOf(old), { ...old, isNew: false });
+}
+
+let added = 0, refreshed = 0;
+
+for (const found of data.jobs) {
+  const k = keyOf(found);
+  const old = merged.get(k);
+
+  if (old) {
+    // Still live — refresh the details, clear its miss counter, keep it unflagged.
+    merged.set(k, { ...old, ...found, isNew: false, _miss: 0 });
+    refreshed++;
+  } else {
+    merged.set(k, { ...found, isNew: true, _miss: 0 });
+    added++;
+  }
+}
+
+// Age out anything this scan didn't see.
+const seen = new Set(data.jobs.map(keyOf));
+let dropped = 0, aging = 0;
+
+for (const [k, j] of merged) {
+  if (seen.has(k)) continue;
+  j._miss = (j._miss || 0) + 1;
+  if (j._miss >= MISS_LIMIT) {
+    merged.delete(k);
+    dropped++;
+  } else {
+    aging++;
+  }
+}
+
+data.jobs = [...merged.values()];
 data.updated = new Date().toISOString();
+
+console.log(
+  `\nMerge: ${added} added, ${refreshed} refreshed, ` +
+  `${aging} not seen this scan (kept), ${dropped} aged out.`
+);
 
 /* ------------------------------------------------------------------ *
  * 4. Splice the new data in

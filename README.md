@@ -73,20 +73,30 @@ Wrote 23 listings (9 in Birmingham), 4 new.
 
 This is the part worth reading before you leave it running.
 
-Web search bills **$10 per 1,000 searches**, and that dominates everything else — the Haiku tokens are rounding error next to it. Per run at the default budget of 12 searches, you're looking at roughly **$0.13**.
+Two things bill, and both matter more than you'd guess.
+
+**Web search** is $10 per 1,000 searches — 12 searches is $0.12 a run.
+
+**Tokens** are the surprise. Search results get fed back as input, and a real run measured **222,000 input tokens**. That's past Claude Haiku's 100k threshold, where pricing steps up from $0.10/$0.50 per million to $0.50/$2.50. So the tokens cost about as much as the searches rather than being a rounding error.
+
+Measured cost per run: **~$0.26.**
 
 | Schedule | Cron | Runs/mo | Est. cost/mo |
 |---|---|---|---|
-| Every 5h, all week | `0 */5 * * *` | ~146 | ~$19 |
-| Every 5h, weekdays | `0 */5 * * 1-5` | ~110 | ~$14 |
-| **Every 12h, weekdays** (current) | `0 13,23 * * 1-5` | ~44 | **~$6** |
-| Once daily, weekdays | `0 13 * * 1-5` | ~22 | ~$3 |
+| Every 5h, weekdays | `0 */5 * * 1-5` | ~110 | ~$29 |
+| **Every 12h, weekdays** (current) | `0 13,23 * * 1-5` | ~44 | **~$11** |
+| Once daily, weekdays | `0 13 * * 1-5` | ~22 | ~$6 |
+| Mon/Wed/Fri mornings | `0 13 * * 1,3,5` | ~13 | ~$3 |
 
-Currently set to **twice a day on weekdays — 7am and 5pm Central.** The morning run means fresh listings are waiting when he sits down; the evening run catches whatever was posted during the business day.
+Currently **twice a day on weekdays, 7am and 5pm Central.**
 
-That's the sweet spot. Broker postings turn over on a daily cadence, not an hourly one — a req posted Tuesday morning is still there Wednesday. Scanning five times a day mostly re-reads the same listings at full search cost.
+**Since the merge change, scanning less often costs you much less than it used to.** The board no longer depends on any single scan being complete — listings accumulate and persist for six scans before ageing out. A missed morning just means a listing shows up that evening instead. If $11/month feels steep, **once daily is the better trade now**, and Mon/Wed/Fri is perfectly defensible for a job search measured in weeks.
 
-To change it, edit the `cron:` line in `.github/workflows/scan.yml` and push. Note that GitHub cron is UTC and doesn't observe daylight saving, so these fire an hour later in Central terms from March to November.
+To change it, edit the `cron:` line in `.github/workflows/scan.yml` and push. GitHub cron is UTC and ignores daylight saving, so these fire an hour later in Central terms from March to November.
+
+### Cutting the token half of the bill
+
+`MAX_SEARCHES` is the lever for both halves at once — fewer searches means fewer results fed back as input. Dropping it from 12 to 8 cuts roughly a third off a run. Below about 6 the research gets visibly thin, though the merge logic absorbs that far better than it used to.
 
 ### Other cost levers
 
@@ -99,11 +109,25 @@ Both are repository *variables* (**Settings → Secrets and variables → Action
 
 ---
 
+## The board accumulates, it doesn't churn
+
+This is the most important thing to understand about how the scan behaves.
+
+Any one scan sees a partial slice of the market — whichever search results came back, however far the model got before it stopped. An early version replaced the whole board with each scan's findings, and a thin run promptly deleted twelve perfectly good listings.
+
+Now listings **merge**. A scan can add and refresh, but it can only remove by attrition: a listing has to go unseen for **six consecutive scans** — about three days at the current cadence — before it's dropped. Each run reports what happened:
+
+```
+Merge: 3 added, 4 refreshed, 15 not seen this scan (kept), 0 aged out.
+```
+
+The practical effect is that the board only grows during an active search, scan quality stops being load-bearing, and a genuinely filled role still disappears within a few days rather than lingering forever.
+
 ## How it protects itself
 
 A bad scan is worse than no scan, so `scan.mjs` refuses to publish unless everything checks out. On any failure it exits non-zero, writes nothing, and the last good page stays live.
 
-It bails if the API call fails after 4 retries, if the model returns unparseable output, if any job is missing a working `http(s)` link, if a tier value is wrong, or if the result set collapses to under 40% of the previous count — that last one catches the failure mode where a scan half-works and would otherwise wipe most of the board.
+It bails if the API call fails after 4 retries, if the model returns unparseable output, if any job is missing a working `http(s)` link, if a tier value is wrong, or if fewer than 3 listings come back — that last one means the research failed outright rather than the market emptying.
 
 It repairs rather than rejects two things: an unrecognized city gets filed as Remote, and a malformed `start` value falls back to `Rolling`.
 
